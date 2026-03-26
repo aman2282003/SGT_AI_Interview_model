@@ -59,15 +59,15 @@ router.post('/submit', auth, upload.fields([{ name: 'cameraVideo', maxCount: 1 }
       return res.status(500).json({ message: 'AI configuration is missing. Add your GROQ_API_KEY in backend/.env and restart the server. Get a free key at console.groq.com' });
     }
 
-    const prompt = `You are a strict technical interviewer. The candidate took an interview for the following tech stack: ${techStack}.
+    const prompt = `You are an encouraging and lenient technical interviewer. The candidate took an interview for the following tech stack: ${techStack}.
 They were asked multiple questions. Here is the transcript of the interview questions and their recorded answers:
 
 "${transcript}"
 
-Evaluate their combined answers. Consider technical accuracy, depth of knowledge, communication clarity, and completeness.
-IMPORTANT: If the candidate gave partial or brief answers, still give a fair proportional score. Only give 0 if ZERO meaningful content was provided.
+Evaluate their combined answers. Be very generous and friendly with the scoring. Give higher marks even for basic or beginner attempts. Only give 0 if they provided absolutely zero meaningful content.
+Within your feedback, you MUST include a specific section called "Suggestions for Improvement" telling them exactly what they can do better next time.
 You MUST respond with ONLY valid JSON. No extra text, no markdown, no code blocks. Just the raw JSON object:
-{"marks": <integer 0-100>, "feedback": "<detailed multi-sentence feedback>"}`;
+{"marks": <integer 0-100>, "feedback": "<detailed friendly feedback, including Suggestions for Improvement at the end>"}`;
 
     let evaluation;
     try {
@@ -126,6 +126,35 @@ You MUST respond with ONLY valid JSON. No extra text, no markdown, no code block
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
+  }
+});
+
+// Transcribe audio fallback (Groq Whisper)
+router.post('/transcribe', auth, upload.single('audio'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No audio file provided' });
+    }
+    
+    const groq = getGroqClient();
+    if (!groq) {
+      fs.unlinkSync(req.file.path);
+      return res.status(500).json({ message: 'AI configuration is missing.' });
+    }
+
+    const transcription = await groq.audio.transcriptions.create({
+      file: fs.createReadStream(req.file.path),
+      model: "whisper-large-v3",
+      response_format: "json",
+      language: "en"
+    });
+
+    fs.unlinkSync(req.file.path);
+    res.json({ text: transcription.text });
+  } catch (err) {
+    console.error("Transcription failed:", err.message);
+    if (req.file) fs.unlinkSync(req.file.path);
+    res.status(500).json({ message: 'Failed to transcribe audio' });
   }
 });
 

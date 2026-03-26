@@ -22,6 +22,9 @@ export default function InterviewRoom() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isInterviewStarted, setIsInterviewStarted] = useState(false);
   
+  // Debug / Diagnostics
+  const [diagnosticStatus, setDiagnosticStatus] = useState('Idle');
+  
   // Code Editor states
   const [codeContent, setCodeContent] = useState('');
   const [codeOutput, setCodeOutput] = useState(null);
@@ -36,6 +39,9 @@ export default function InterviewRoom() {
   const cameraRecorderRef = useRef(null);
   const screenChunksRef = useRef([]);
   const cameraChunksRef = useRef([]);
+  
+  const audioRecorderRef = useRef(null);
+  const audioStreamRef = useRef(null);
   
   const recordingStateRef = useRef(isRecording);
   
@@ -83,59 +89,89 @@ export default function InterviewRoom() {
     }
   }, [currentIndex, questions]);
 
-  useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = 'en-US';
+  const activeRecorderRef = useRef(null);
+
+  const startRecordingSystem = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioStreamRef.current = stream;
+      setDiagnosticStatus('Recording (Live AI Transcription)...');
       
-      recognition.onresult = (event) => {
-        let finalTranscript = '';
-        let interimTranscript = '';
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript + ' ';
-          } else {
-            interimTranscript += event.results[i][0].transcript;
-          }
-        }
-        if (finalTranscript) {
-          setCurrentAnswer(prev => prev + finalTranscript);
-        }
-        setInterimAnswer(interimTranscript);
-      };
-      
-      recognition.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
-        if (event.error === 'not-allowed') {
+      const processChunk = () => {
+        if (!recordingStateRef.current) return;
+        
+        let recorder;
+        try {
+          recorder = new MediaRecorder(stream);
+        } catch (e) {
+          setDiagnosticStatus('Browser MediaRecorder failed: ' + e.message);
           setIsRecording(false);
           recordingStateRef.current = false;
-          alert('Microphone access denied. Please allow microphone access in your browser settings, then try again.');
-        } else if (event.error === 'no-speech') {
-          // No speech detected — this is fine, recognition will auto-restart via onend
-        } else if (event.error === 'network') {
-          console.warn('Network error in speech recognition — will retry.');
-        } else {
-          console.warn('Speech recognition error:', event.error, '— retrying if still recording.');
+          return;
         }
-      };
-
-      recognition.onend = () => {
-        if (recordingStateRef.current) {
-          try { recognition.start(); } catch (e) {}
-        }
+        
+        activeRecorderRef.current = recorder;
+        const chunks = [];
+        
+        recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+        
+        recorder.onstop = async () => {
+           if (chunks.length > 0) {
+              const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+              const formData = new FormData();
+              // Determine file extension
+              const ext = (recorder.mimeType || '').includes('mp4') ? 'm4a' : 'webm';
+              formData.append('audio', blob, 'chunk.' + ext);
+              try {
+                const res = await axios.post('http://localhost:5000/api/interview/transcribe', formData, {
+                   headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+                });
+                if (res.data && res.data.text) {
+                   const txt = res.data.text.trim();
+                   const isHallucination = /^(Thank you|Thanks for watching|Thanks|Subscribe)\.?$/i.test(txt);
+                   if (txt.length > 1 && !isHallucination) {
+                      setCurrentAnswer(prev => prev + (prev.trim() ? " " : "") + txt);
+                   }
+                }
+              } catch(e) {
+                 console.log("Chunk transcription dropped", e);
+                 setDiagnosticStatus('Cloud AI Offline: ' + e.message);
+              }
+           }
+           // Loop next chunk 
+           if (recordingStateRef.current) {
+              processChunk();
+           }
+        };
+        
+        recorder.start();
+        setTimeout(() => {
+           if (recorder.state === 'recording' && recordingStateRef.current) {
+               recorder.stop();
+           }
+        }, 3500); // 3.5 seconds per chunk
       };
       
-      recognitionRef.current = recognition;
-    } else {
-      console.warn('Speech Recognition not supported.');
-      alert('Your browser does not support Speech Recognition. Use Google Chrome.');
+      processChunk();
+
+    } catch (err) {
+      console.error("Recording system failed:", err);
+      // Give them the specific javascript exception
+      alert("Microphone Error: " + err.message + "\nIf you get permission denied, click the lock icon next to the URL.");
+      setIsRecording(false);
+      recordingStateRef.current = false;
+      setDiagnosticStatus('Hardware Error: ' + err.message);
     }
-    
+  };
+
+  useEffect(() => {
     return () => {
-      if (recognitionRef.current) recognitionRef.current.stop();
+      if (activeRecorderRef.current && activeRecorderRef.current.state === 'recording') {
+         try { activeRecorderRef.current.stop(); } catch(e) {}
+      }
+      if (audioStreamRef.current) {
+         audioStreamRef.current.getTracks().forEach(t => t.stop());
+      }
     };
   }, []);
 
@@ -205,11 +241,17 @@ export default function InterviewRoom() {
     if (isRecording) {
       setIsRecording(false);
       recordingStateRef.current = false;
-      recognitionRef.current?.stop();
+      if (activeRecorderRef.current && activeRecorderRef.current.state === 'recording') {
+        try { activeRecorderRef.current.stop(); } catch(e){}
+      }
+      if (audioStreamRef.current) {
+        audioStreamRef.current.getTracks().forEach(t => t.stop());
+      }
+      setDiagnosticStatus('Mic Paused');
     } else {
       setIsRecording(true);
       recordingStateRef.current = true;
-      try { recognitionRef.current?.start(); } catch (e) {}
+      startRecordingSystem();
     }
   };
 
@@ -249,14 +291,8 @@ export default function InterviewRoom() {
     setCurrentAnswer('');
     setInterimAnswer('');
     
-    if (isRecording) {
-      recognitionRef.current?.stop();
-      setTimeout(() => {
-        if (recordingStateRef.current) {
-          try { recognitionRef.current?.start(); } catch(e){}
-        }
-      }, 300);
-    }
+    // DO NOT stop recording when moving to the next question!
+    // Maintain a gapless stream of audio transcription!
     setCurrentIndex(prev => prev + 1);
   };
 
@@ -289,7 +325,12 @@ export default function InterviewRoom() {
     if (isRecording) {
       setIsRecording(false);
       recordingStateRef.current = false;
-      recognitionRef.current?.stop();
+      if (activeRecorderRef.current && activeRecorderRef.current.state === 'recording') {
+        try { activeRecorderRef.current.stop(); } catch(e){}
+      }
+      if (audioStreamRef.current) {
+        audioStreamRef.current.getTracks().forEach(t => t.stop());
+      }
     }
     
     const getBlob = (recorder, chunks) => new Promise((resolve) => {
@@ -347,7 +388,7 @@ export default function InterviewRoom() {
       <div className="flex justify-between items-center mb-6">
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">{tech} Technical Interview</h2>
+            <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight capitalize">{tech} Technical Interview</h2>
             {isHardwareReady && (
               <span className="bg-indigo-100 text-indigo-700 px-4 py-1.5 rounded-full text-sm font-bold shadow-sm">
                 Question {currentIndex + 1} of {questions.length}
@@ -362,7 +403,7 @@ export default function InterviewRoom() {
               <span className={`relative inline-flex rounded-full h-3 w-3 ${isRecording ? 'bg-red-500' : 'bg-gray-300'}`}></span>
             </span>
             <span className={isRecording ? 'text-red-600 font-bold' : 'text-gray-500 font-semibold'}>
-              {isRecording ? 'Microphone Active' : 'Microphone OFF'}
+              {diagnosticStatus}
             </span>
           </div>
         </div>
@@ -504,8 +545,7 @@ export default function InterviewRoom() {
           <div className="h-[300px] bg-gray-900 rounded-3xl overflow-hidden relative shadow-lg ring-1 ring-gray-900/10 border border-gray-800 flex items-center justify-center">
             {isCameraRequested ? (
               <Webcam 
-                audio={true} 
-                muted={true}
+                audio={false} 
                 className="w-full h-full object-cover" 
                 mirrored={true} 
                 onUserMedia={handleUserMedia}
