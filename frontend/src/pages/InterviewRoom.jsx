@@ -62,7 +62,7 @@ export default function InterviewRoom() {
         // Custom topic
         try {
           const token = localStorage.getItem('token');
-          const res = await axios.post('http://localhost:5000/api/interview/generate-questions', { topic: tech }, {
+          const res = await axios.post(`${import.meta.env.VITE_HOST}/api/interview/generate-questions`, { topic: tech }, {
             headers: { Authorization: `Bearer ${token}` }
           });
           setQuestions(res.data.questions);
@@ -123,7 +123,7 @@ export default function InterviewRoom() {
               const ext = (recorder.mimeType || '').includes('mp4') ? 'm4a' : 'webm';
               formData.append('audio', blob, 'chunk.' + ext);
               try {
-                const res = await axios.post('http://localhost:5000/api/interview/transcribe', formData, {
+                const res = await axios.post(`${import.meta.env.VITE_HOST}/api/interview/transcribe`, formData, {
                    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
                 });
                 if (res.data && res.data.text) {
@@ -260,7 +260,7 @@ export default function InterviewRoom() {
     setIsExecuting(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.post('http://localhost:5000/api/execute/run', {
+      const res = await axios.post(`${import.meta.env.VITE_HOST}/api/execute/run`, {
         language: currentQ.language,
         code: codeContent,
         testCases: currentQ.testCases
@@ -358,7 +358,7 @@ export default function InterviewRoom() {
       if (screenBlob.size > 0) formData.append('screenVideo', screenBlob, 'screen.webm');
 
       const token = localStorage.getItem('token');
-      const res = await axios.post('http://localhost:5000/api/interview/submit', formData, {
+      const res = await axios.post(`${import.meta.env.VITE_HOST}/api/interview/submit`, formData, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'

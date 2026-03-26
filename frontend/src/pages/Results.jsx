@@ -14,7 +14,7 @@ export default function Results() {
     const fetchSession = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get(`http://localhost:5000/api/interview/${id}`, {
+        const res = await axios.get(`${import.meta.env.VITE_HOST}/api/interview/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setSession(res.data);
@@ -105,7 +105,7 @@ export default function Results() {
                         <div className="absolute top-4 left-4 bg-black/70 backdrop-blur-md px-4 py-2 rounded-xl text-white text-xs font-bold flex items-center z-10 opacity-100 transition-opacity">
                           <MonitorUp className="w-4 h-4 mr-2" /> Screen Capture
                         </div>
-                        <video src={`http://localhost:5000${session.screenVideoUrl}`} controls className="w-full h-auto max-h-[400px]" />
+                        <video src={`${import.meta.env.VITE_HOST}${session.screenVideoUrl}`} controls className="w-full h-auto max-h-[400px]" />
                       </div>
                     )}
                     {session.cameraVideoUrl && (
@@ -113,7 +113,7 @@ export default function Results() {
                         <div className="absolute top-4 left-4 bg-black/70 backdrop-blur-md px-4 py-2 rounded-xl text-white text-xs font-bold flex items-center z-10 opacity-100 transition-opacity">
                           <Video className="w-4 h-4 mr-2" /> Personal Camera
                         </div>
-                        <video src={`http://localhost:5000${session.cameraVideoUrl}`} controls className="w-full h-auto max-h-[300px]" />
+                        <video src={`${import.meta.env.VITE_HOST}${session.cameraVideoUrl}`} controls className="w-full h-auto max-h-[300px]" />
                       </div>
                     )}
                   </div>
