@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const InterviewSession = require('../models/InterviewSession');
-const { GoogleGenAI } = require('@google/genai');
+const Groq = require('groq-sdk');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -22,61 +22,92 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
+// Helper to get a Groq client (validates key first)
+function getGroqClient() {
+  const key = process.env.GROQ_API_KEY;
+  if (!key || key === 'your_groq_api_key_here') {
+    return null;
+  }
+  return new Groq({ apiKey: key });
+}
+
 // Submit interview transcript
 router.post('/submit', auth, upload.fields([{ name: 'cameraVideo', maxCount: 1 }, { name: 'screenVideo', maxCount: 1 }]), async (req, res) => {
   try {
     const { techStack, transcript } = req.body;
-    
+
     let cameraVideoUrl = null;
     let screenVideoUrl = null;
-    
+
     if (req.files && req.files['cameraVideo']) {
       cameraVideoUrl = `/uploads/${req.files['cameraVideo'][0].filename}`;
     }
     if (req.files && req.files['screenVideo']) {
       screenVideoUrl = `/uploads/${req.files['screenVideo'][0].filename}`;
     }
-    
+
     if (!techStack || !transcript) {
       return res.status(400).json({ message: 'Tech stack and transcript are required' });
     }
 
-    if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'your_gemini_api_key_here') {
-      return res.status(500).json({ message: 'AI configuration is missing. Add GEMINI_API_KEY in backend/.env then restart the server.' });
-    }
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    console.log("==== INCOMING INTERVIEW TRANSCRIPT ====");
+    console.log(transcript);
+    console.log("=======================================");
 
-    // Call Gemini API
-    const prompt = `You are a strict technical interviewer. The candidate took an interview for the following tech stack: ${techStack}. 
-    They were asked multiple questions. Here is the transcript of the interview questions and their recorded answers:
-    
-    "${transcript}"
-    
-    Evaluate their combined answers. Consider technical accuracy, depth of knowledge, and communication. 
-    Provide your response strictly in the following JSON format:
-    {
-      "marks": <a number out of 100 representing their overall score>,
-      "feedback": "<detailed feedback on their overall performance, what they answered correctly, and what they got wrong across all questions>"
-    }`;
+    const groq = getGroqClient();
+    if (!groq) {
+      return res.status(500).json({ message: 'AI configuration is missing. Add your GROQ_API_KEY in backend/.env and restart the server. Get a free key at console.groq.com' });
+    }
+
+    const prompt = `You are a strict technical interviewer. The candidate took an interview for the following tech stack: ${techStack}.
+They were asked multiple questions. Here is the transcript of the interview questions and their recorded answers:
+
+"${transcript}"
+
+Evaluate their combined answers. Consider technical accuracy, depth of knowledge, communication clarity, and completeness.
+IMPORTANT: If the candidate gave partial or brief answers, still give a fair proportional score. Only give 0 if ZERO meaningful content was provided.
+You MUST respond with ONLY valid JSON. No extra text, no markdown, no code blocks. Just the raw JSON object:
+{"marks": <integer 0-100>, "feedback": "<detailed multi-sentence feedback>"}`;
 
     let evaluation;
     try {
-      const result = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt
+      const completion = await groq.chat.completions.create({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.4,
+        max_tokens: 1024,
       });
-      // Extract JSON from response
-      let responseText = result.text.trim();
-      // Remove any markdown code block formatting if Gemini adds it
-      if (responseText.startsWith('```json')) {
-         responseText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-      } else if (responseText.startsWith('```')) {
-         responseText = responseText.replace(/```/g, '').trim();
+
+      let responseText = completion.choices[0]?.message?.content?.trim() || '';
+
+      console.log("==== RAW GROQ RESPONSE ====");
+      console.log(responseText);
+      console.log("===========================");
+
+      // Strip markdown code fences if present
+      responseText = responseText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+
+      // Extract JSON object if there is surrounding text
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        responseText = jsonMatch[0];
       }
+
       evaluation = JSON.parse(responseText);
+      console.log("==== AI EVALUATION RESULT ====");
+      console.log("Marks:", evaluation.marks);
+      console.log("Feedback:", evaluation.feedback?.substring(0, 100) + '...');
+      console.log("==============================");
     } catch (aiErr) {
-      console.error('Gemini API Error:', aiErr);
-      return res.status(500).json({ message: 'Failed to evaluate interview via AI' });
+      console.error('Groq API Error:', aiErr.message || aiErr);
+      const errMsg = aiErr.message || '';
+      if (errMsg.includes('429') || errMsg.toLowerCase().includes('quota') || errMsg.toLowerCase().includes('rate limit')) {
+        return res.status(429).json({ message: 'Groq API rate limit hit. Please wait a moment and try again. Free tier allows 30 requests/min.' });
+      }
+      if (errMsg.includes('401') || errMsg.toLowerCase().includes('invalid api key') || errMsg.toLowerCase().includes('authentication')) {
+        return res.status(401).json({ message: 'Invalid Groq API key. Please check your GROQ_API_KEY in backend/.env' });
+      }
+      return res.status(500).json({ message: 'Failed to evaluate interview via AI. Error: ' + errMsg });
     }
 
     const session = new InterviewSession({
@@ -88,7 +119,7 @@ router.post('/submit', auth, upload.fields([{ name: 'cameraVideo', maxCount: 1 }
       aiMarks: evaluation.marks,
       aiFeedback: evaluation.feedback
     });
-    
+
     await session.save();
     res.status(201).json(session);
 
@@ -116,17 +147,75 @@ router.get('/:id', auth, async (req, res) => {
     if (!session) {
       return res.status(404).json({ message: 'Session not found' });
     }
-    
+
     if (session.user.toString() !== req.user.id) {
       return res.status(401).json({ message: 'Not authorized' });
     }
-    
+
     res.json(session);
   } catch (err) {
     console.error(err.message);
     if (err.kind === 'ObjectId') {
       return res.status(404).json({ message: 'Session not found' });
     }
+    res.status(500).send('Server Error');
+  }
+});
+
+// Generate dynamic questions for custom topics
+router.post('/generate-questions', auth, async (req, res) => {
+  try {
+    const { topic } = req.body;
+    if (!topic) {
+      return res.status(400).json({ message: 'Topic is required' });
+    }
+
+    const groq = getGroqClient();
+    if (!groq) {
+      return res.status(500).json({ message: 'AI configuration is missing. Add your GROQ_API_KEY in backend/.env and restart the server.' });
+    }
+
+    const prompt = `You are an expert interviewer. The candidate has chosen the following custom topic for their interview: "${topic}".
+Generate exactly 5 interview questions related to this topic.
+You MUST respond with ONLY a valid JSON array of strings. No extra text, no markdown, no code blocks:
+["Question 1?", "Question 2?", "Question 3?", "Question 4?", "Question 5?"]`;
+
+    try {
+      const completion = await groq.chat.completions.create({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.6,
+        max_tokens: 512,
+      });
+
+      let responseText = completion.choices[0]?.message?.content?.trim() || '';
+
+      // Strip markdown code fences
+      responseText = responseText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+
+      // Extract JSON array if there is surrounding text
+      const jsonMatch = responseText.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        responseText = jsonMatch[0];
+      }
+
+      const parsedQuestions = JSON.parse(responseText);
+
+      // Format to match the expected frontend structure
+      const formattedQuestions = parsedQuestions.map(q => ({
+        type: 'text',
+        prompt: q
+      }));
+
+      res.json({ questions: formattedQuestions });
+
+    } catch (aiErr) {
+      console.error('Groq API Error in generating questions:', aiErr.message || aiErr);
+      return res.status(500).json({ message: 'Failed to generate questions via AI. Error: ' + (aiErr.message || 'Unknown') });
+    }
+
+  } catch (err) {
+    console.error(err.message);
     res.status(500).send('Server Error');
   }
 });

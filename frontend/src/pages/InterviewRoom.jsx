@@ -18,6 +18,7 @@ export default function InterviewRoom() {
   const [isRecording, setIsRecording] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [hasCamera, setHasCamera] = useState(false);
+  const [isCameraRequested, setIsCameraRequested] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isInterviewStarted, setIsInterviewStarted] = useState(false);
   
@@ -43,11 +44,35 @@ export default function InterviewRoom() {
   }, [isRecording]);
 
   useEffect(() => {
-    const techKey = tech.toLowerCase().replace(/[^a-z0-9_]/g, '');
-    const allQs = interviewQuestions[techKey] || interviewQuestions['system_design'];
-    const shuffled = [...allQs].sort(() => 0.5 - Math.random());
-    setQuestions(shuffled.slice(0, 5));
-    setAnswers(new Array(5).fill(''));
+    const fetchQuestions = async () => {
+      const techKey = tech.toLowerCase().replace(/[^a-z0-9_]/g, '');
+      if (interviewQuestions[techKey]) {
+        // Predefined topic
+        const allQs = interviewQuestions[techKey];
+        const shuffled = [...allQs].sort(() => 0.5 - Math.random());
+        setQuestions(shuffled.slice(0, 5));
+        setAnswers(new Array(5).fill(''));
+      } else {
+        // Custom topic
+        try {
+          const token = localStorage.getItem('token');
+          const res = await axios.post('http://localhost:5000/api/interview/generate-questions', { topic: tech }, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setQuestions(res.data.questions);
+          setAnswers(new Array(5).fill(''));
+        } catch (err) {
+          console.error("Failed to generate custom questions", err);
+          alert("Failed to generate custom interview questions. Falling back to default questions.");
+          const allQs = interviewQuestions['system_design'];
+          const shuffled = [...allQs].sort(() => 0.5 - Math.random());
+          setQuestions(shuffled.slice(0, 5));
+          setAnswers(new Array(5).fill(''));
+        }
+      }
+    };
+    
+    fetchQuestions();
   }, [tech]);
 
   useEffect(() => {
@@ -83,10 +108,17 @@ export default function InterviewRoom() {
       };
       
       recognition.onerror = (event) => {
-        console.error('Speech recognition error', event.error);
+        console.error('Speech recognition error:', event.error);
         if (event.error === 'not-allowed') {
           setIsRecording(false);
-          alert('Microphone access denied. Please allow microphone access to record answers.');
+          recordingStateRef.current = false;
+          alert('Microphone access denied. Please allow microphone access in your browser settings, then try again.');
+        } else if (event.error === 'no-speech') {
+          // No speech detected — this is fine, recognition will auto-restart via onend
+        } else if (event.error === 'network') {
+          console.warn('Network error in speech recognition — will retry.');
+        } else {
+          console.warn('Speech recognition error:', event.error, '— retrying if still recording.');
         }
       };
 
@@ -201,14 +233,16 @@ export default function InterviewRoom() {
   const handleNextQuestion = () => {
     const currentQ = questions[currentIndex];
     const questionText = typeof currentQ === 'string' ? currentQ : currentQ.prompt;
+    // Capture BOTH final and interim text so nothing is lost when clicking next
+    const combinedAnswer = (currentAnswer + ' ' + interimAnswer).trim();
     const finalAnswerText = typeof currentQ === 'object' && currentQ.type === 'coding' 
-        ? `[Code Submitted]\n${codeContent}\n\n[Spoken Transcript]\n${currentAnswer + " " + interimAnswer}`
-        : currentAnswer + " " + interimAnswer;
+        ? `[Code Submitted]\n${codeContent}\n\n[Spoken Transcript]\n${combinedAnswer}`
+        : combinedAnswer;
 
     const newAnswers = [...answers];
     newAnswers[currentIndex] = {
       question: questionText,
-      answer: finalAnswerText
+      answer: finalAnswerText || 'No answer provided.'
     };
     setAnswers(newAnswers);
     
@@ -229,21 +263,26 @@ export default function InterviewRoom() {
   const submitInterview = async () => {
     const currentQ = questions[currentIndex];
     const questionText = typeof currentQ === 'string' ? currentQ : currentQ.prompt;
+    // Capture BOTH final and interim text so nothing is lost on submit
+    const combinedAnswer = (currentAnswer + ' ' + interimAnswer).trim();
     const finalAnswerText = typeof currentQ === 'object' && currentQ.type === 'coding' 
-        ? `[Code Submitted]\n${codeContent}\n\n[Spoken Transcript]\n${currentAnswer + " " + interimAnswer}`
-        : currentAnswer + " " + interimAnswer;
+        ? `[Code Submitted]\n${codeContent}\n\n[Spoken Transcript]\n${combinedAnswer}`
+        : combinedAnswer;
 
     const newAnswers = [...answers];
     newAnswers[currentIndex] = {
       question: questionText,
-      answer: finalAnswerText
+      answer: finalAnswerText || 'No answer provided.'
     };
     
-    let fullTranscript = newAnswers.map((item, idx) => `Q${idx + 1}: ${item.question}\nA: ${item.answer || 'No answer provided.'}`).join('\n\n');
-    if (!fullTranscript.trim()) {
-      alert("Please record some audio before submitting.");
+    // Check that the candidate gave at least one real answer
+    const hasAnyAnswer = newAnswers.some(item => item && item.answer && item.answer !== 'No answer provided.' && item.answer.trim().length > 0);
+    if (!hasAnyAnswer) {
+      alert("Please provide at least one answer before submitting. You can speak using the microphone or type directly in the answer box.");
       return;
     }
+    
+    let fullTranscript = newAnswers.map((item, idx) => `Q${idx + 1}: ${item ? item.question : questions[idx]}\nA: ${item ? item.answer : 'No answer provided.'}`).join('\n\n');
     
     setIsSubmitting(true);
     
@@ -287,6 +326,13 @@ export default function InterviewRoom() {
       navigate(`/results/${res.data._id}`);
     } catch (err) {
       console.error("Submission failed", err);
+      // If session expired / token invalid, log out and redirect to login
+      if (err.response?.status === 401) {
+        localStorage.removeItem('token');
+        alert('Your session has expired. Please log in again to continue.');
+        navigate('/login');
+        return;
+      }
       alert(err.response?.data?.message || "Failed to submit interview. Please try again.");
       setIsSubmitting(false);
     }
@@ -409,14 +455,15 @@ export default function InterviewRoom() {
                       <h3 className="font-semibold text-gray-900 mb-4 flex items-center text-lg">
                           <Mic className="w-5 h-5 mr-2 text-indigo-600" /> Live Transcript Feed
                       </h3>
-                      <div className="flex-1 bg-gray-50 rounded-2xl p-6 overflow-y-auto min-h-[250px] text-base text-gray-700 leading-relaxed font-medium shadow-inner">
-                        {currentAnswer}
-                        <span className="text-indigo-500">{interimAnswer}</span>
-                        
-                        {(!currentAnswer && !interimAnswer) && (
-                          <span className="text-gray-400 flex items-center justify-center h-full italic text-center">
-                            Press "Start Recording", read the question above, and start speaking...
-                          </span>
+                      <div className="flex-1 bg-gray-50 rounded-2xl p-6 shadow-inner relative flex flex-col min-h-[250px]">
+                        <textarea
+                          className="w-full h-full bg-transparent resize-none outline-none text-gray-700 leading-relaxed font-medium"
+                          placeholder='Press "Start Recording" to speak, or click here to manually type your answer if voice recording fails...'
+                          value={currentAnswer}
+                          onChange={(e) => setCurrentAnswer(e.target.value)}
+                        />
+                        {interimAnswer && (
+                          <div className="text-indigo-500 font-medium mt-2 italic">{interimAnswer}</div>
                         )}
                       </div>
                     </>
@@ -454,14 +501,29 @@ export default function InterviewRoom() {
 
         {/* RIGHT COMPONENT */}
         <div className="lg:col-span-2 flex flex-col space-y-6">
-          <div className="h-[300px] bg-gray-900 rounded-3xl overflow-hidden relative shadow-lg ring-1 ring-gray-900/10 border border-gray-800">
-            <Webcam 
-              audio={true} 
-              className="w-full h-full object-cover" 
-              mirrored={true} 
-              onUserMedia={handleUserMedia}
-              onUserMediaError={handleUserMediaError}
-            />
+          <div className="h-[300px] bg-gray-900 rounded-3xl overflow-hidden relative shadow-lg ring-1 ring-gray-900/10 border border-gray-800 flex items-center justify-center">
+            {isCameraRequested ? (
+              <Webcam 
+                audio={true} 
+                muted={true}
+                className="w-full h-full object-cover" 
+                mirrored={true} 
+                onUserMedia={handleUserMedia}
+                onUserMediaError={handleUserMediaError}
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center flex-col text-center p-6 bg-gray-900 z-10 rounded-3xl">
+                <Video className="w-16 h-16 text-gray-700 mx-auto mb-4" />
+                <p className="text-gray-400 font-medium text-sm max-w-[200px] mx-auto">Click below to enable your camera. This is strictly required to view questions.</p>
+                <button 
+                  onClick={() => setIsCameraRequested(true)}
+                  className="mt-6 px-6 py-2.5 bg-gray-800 hover:bg-gray-700 text-white rounded-xl transition-all duration-300 font-medium border border-gray-700 shadow-sm"
+                >
+                  Enable Camera
+                </button>
+              </div>
+            )}
+            
             <div className={`absolute top-4 left-4 backdrop-blur-md px-4 py-2 rounded-xl text-white/90 text-sm font-bold flex items-center shadow-sm ${hasCamera ? 'bg-black/60' : 'bg-red-600/80'}`}>
               <span className={`w-2 h-2 rounded-full mr-2 ${hasCamera ? 'bg-green-500 animate-pulse' : 'bg-white'}`}></span> 
               {hasCamera ? 'Personal Camera' : 'Camera Blocked'}

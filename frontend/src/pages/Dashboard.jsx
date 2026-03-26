@@ -21,6 +21,7 @@ export const TECH_STACKS = [
 export default function Dashboard() {
   const navigate = useNavigate();
   const [history, setHistory] = useState([]);
+  const [customTopic, setCustomTopic] = useState('');
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -83,6 +84,33 @@ export default function Dashboard() {
               </div>
             </div>
           ))}
+        </div>
+
+        <div className="mt-8 bg-white rounded-[2rem] shadow-sm p-8 border border-gray-100 flex flex-col sm:flex-row items-center gap-6 justify-between transition-all hover:shadow-md hover:border-indigo-200">
+          <div className="flex-1">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Can't find your topic?</h3>
+            <p className="text-gray-500 font-medium">Enter any custom topic (e.g. Marketing, Professionalism, English, French) and the AI will generate questions for you.</p>
+          </div>
+          <div className="flex w-full sm:w-auto gap-4">
+            <input 
+              type="text"
+              placeholder="Enter custom topic..."
+              value={customTopic}
+              onChange={(e) => setCustomTopic(e.target.value)}
+              className="px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 flex-1 sm:w-64"
+            />
+            <button 
+              onClick={() => {
+                if(customTopic.trim()) {
+                  navigate(`/interview/${encodeURIComponent(customTopic.trim())}`);
+                }
+              }}
+              disabled={!customTopic.trim()}
+              className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-md transition-all whitespace-nowrap"
+            >
+              Start Custom
+            </button>
+          </div>
         </div>
       </section>
 
