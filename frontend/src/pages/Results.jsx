@@ -11,6 +11,8 @@ export default function Results() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    let interval;
+    
     const fetchSession = async () => {
       try {
         const token = localStorage.getItem('token');
@@ -18,13 +20,35 @@ export default function Results() {
           headers: { Authorization: `Bearer ${token}` }
         });
         setSession(res.data);
-      } catch (err) {
-        setError('Failed to load interview results');
-      } finally {
         setLoading(false);
+
+        // If AI assessment is done, clear the interval
+        if (res.data.aiMarks !== null && interval) {
+          clearInterval(interval);
+          interval = null;
+        }
+      } catch (err) {
+        console.error("Polling error:", err);
+        setError('Failed to load interview results');
+        setLoading(false);
+        if (interval) clearInterval(interval);
       }
     };
+
+    // Initial fetch
     fetchSession();
+
+    // Only start polling if we don't have the result yet
+    interval = setInterval(() => {
+      // Check if we already have the session AND it still has no marks
+      // Using a closure/ref or just checking the latest state via functional update is tricky in setInterval
+      // but here we can just call fetchSession and it will handle the stop condition.
+      fetchSession();
+    }, 5000); // Poll every 5 seconds
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [id]);
 
   if (loading) return <div className="min-h-[calc(100vh-4rem)] flex justify-center items-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>;
@@ -37,8 +61,9 @@ export default function Results() {
   );
   if (!session) return null;
 
-  const scoreColor = session.aiMarks >= 80 ? 'text-green-600' : session.aiMarks >= 50 ? 'text-amber-500' : 'text-red-500';
-  const scoreBg = session.aiMarks >= 80 ? 'bg-green-50 border-green-200' : session.aiMarks >= 50 ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200';
+  const isEvaluating = session.aiMarks === null;
+  const scoreColor = isEvaluating ? 'text-indigo-600' : session.aiMarks >= 80 ? 'text-green-600' : session.aiMarks >= 50 ? 'text-amber-500' : 'text-red-500';
+  const scoreBg = isEvaluating ? 'bg-indigo-50 border-indigo-200' : session.aiMarks >= 80 ? 'bg-green-50 border-green-200' : session.aiMarks >= 50 ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200';
 
   return (
     <div className="max-w-[75rem] mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
@@ -62,10 +87,19 @@ export default function Results() {
             </div>
             
             <div className={`flex flex-col items-center justify-center p-8 rounded-3xl border-2 ${scoreBg} min-w-[14rem] shadow-sm transform hover:scale-105 transition-transform`}>
-              <span className="text-sm font-bold uppercase tracking-widest text-gray-600 mb-2">Total AI Score</span>
+              <span className="text-sm font-bold uppercase tracking-widest text-gray-600 mb-2">{isEvaluating ? 'AI Status' : 'Total AI Score'}</span>
               <div className="flex items-baseline">
-                <span className={`text-7xl font-black tracking-tighter ${scoreColor}`}>{session.aiMarks}</span>
-                <span className="text-3xl font-bold text-gray-400 ml-1">/100</span>
+                {isEvaluating ? (
+                  <div className="flex flex-col items-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-2"></div>
+                    <span className="text-xl font-bold text-indigo-600">Evaluating...</span>
+                  </div>
+                ) : (
+                  <>
+                    <span className={`text-7xl font-black tracking-tighter ${scoreColor}`}>{session.aiMarks}</span>
+                    <span className="text-3xl font-bold text-gray-400 ml-1">/100</span>
+                  </>
+                )}
               </div>
             </div>
           </div>

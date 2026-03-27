@@ -51,12 +51,33 @@ export default function InterviewRoom() {
 
   useEffect(() => {
     const fetchQuestions = async () => {
+      // 1. Try to load from localStorage first
+      const savedProgress = localStorage.getItem('interview_progress');
+      if (savedProgress) {
+        try {
+          const parsed = JSON.parse(savedProgress);
+          if (parsed.tech === tech && parsed.questions.length > 0) {
+            console.log("Resuming interview from saved progress...");
+            setQuestions(parsed.questions);
+            setAnswers(parsed.answers);
+            setCurrentIndex(parsed.currentIndex);
+            // If it was a coding question, set the code too
+            if (parsed.codeContent) setCodeContent(parsed.codeContent);
+            return; // Exit if loaded from cache
+          }
+        } catch (e) {
+          console.error("Failed to parse saved progress", e);
+        }
+      }
+
+      // 2. Otherwise fetch fresh questions
       const techKey = tech.toLowerCase().replace(/[^a-z0-9_]/g, '');
       if (interviewQuestions[techKey]) {
         // Predefined topic
         const allQs = interviewQuestions[techKey];
         const shuffled = [...allQs].sort(() => 0.5 - Math.random());
-        setQuestions(shuffled.slice(0, 5));
+        const selected = shuffled.slice(0, 5);
+        setQuestions(selected);
         setAnswers(new Array(5).fill(''));
       } else {
         // Custom topic
@@ -80,6 +101,20 @@ export default function InterviewRoom() {
     
     fetchQuestions();
   }, [tech]);
+
+  // Save progress to localStorage whenever it changes
+  useEffect(() => {
+    if (questions.length > 0) {
+      const stateToSave = {
+        tech,
+        questions,
+        answers,
+        currentIndex,
+        codeContent
+      };
+      localStorage.setItem('interview_progress', JSON.stringify(stateToSave));
+    }
+  }, [questions, answers, currentIndex, codeContent, tech]);
 
   useEffect(() => {
     const currentQ = questions[currentIndex];
@@ -364,6 +399,7 @@ export default function InterviewRoom() {
           'Content-Type': 'multipart/form-data'
         }
       });
+      localStorage.removeItem('interview_progress');
       navigate(`/results/${res.data._id}`);
     } catch (err) {
       console.error("Submission failed", err);

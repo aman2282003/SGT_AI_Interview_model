@@ -51,16 +51,35 @@ router.post('/submit', auth, upload.fields([{ name: 'cameraVideo', maxCount: 1 }
       return res.status(400).json({ message: 'Tech stack and transcript are required' });
     }
 
-    console.log("==== INCOMING INTERVIEW TRANSCRIPT ====");
-    console.log(transcript);
-    console.log("=======================================");
+    console.log("==== INCOMING INTERVIEW SUBMISSION (ASYNC AI) ====");
+    
+    // 1. Create and Save the session immediately (without AI marks yet)
+    const session = new InterviewSession({
+      user: req.user.id,
+      techStack,
+      transcript,
+      cameraVideoUrl,
+      screenVideoUrl,
+      aiMarks: null, // Still evaluating
+      aiFeedback: "AI is currently evaluating your interview answers. Please wait a moment..."
+    });
 
+    await session.save();
+
+    // 2. Respond to the client immediately to prevent timeout
+    res.status(201).json(session);
+
+    // 3. Perform AI evaluation in the background
     const groq = getGroqClient();
     if (!groq) {
-      return res.status(500).json({ message: 'AI configuration is missing. Add your GROQ_API_KEY in backend/.env and restart the server. Get a free key at console.groq.com' });
+      console.error("AI configuration missing for background evaluation.");
+      return; 
     }
 
-    const prompt = `You are a professional technical interviewer. The candidate took an interview for the following tech stack: ${techStack}.
+    (async () => {
+      try {
+        console.log(`Starting background AI evaluation for session: ${session._id}`);
+        const prompt = `You are a professional technical interviewer. The candidate took an interview for the following tech stack: ${techStack}.
 They were asked multiple questions. Here is the transcript of the interview questions and their recorded answers:
 
 "${transcript}"
@@ -72,62 +91,35 @@ Evaluate their combined answers. Be encouraging but fair with the scoring.
 You MUST respond with ONLY valid JSON. No extra text, no markdown, no code blocks. Just the raw JSON object:
 {"marks": <integer 0-100>, "feedback": "<detailed friendly feedback, including Suggestions for Improvement at the end>"}`;
 
-    let evaluation;
-    try {
-      const completion = await groq.chat.completions.create({
-        model: 'llama-3.3-70b-versatile',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.4,
-        max_tokens: 1024,
-      });
+        const completion = await groq.chat.completions.create({
+          model: 'llama-3.3-70b-versatile',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.4,
+          max_tokens: 1024,
+        });
 
-      let responseText = completion.choices[0]?.message?.content?.trim() || '';
+        let responseText = completion.choices[0]?.message?.content?.trim() || '';
+        responseText = responseText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) responseText = jsonMatch[0];
 
-      console.log("==== RAW GROQ RESPONSE ====");
-      console.log(responseText);
-      console.log("===========================");
+        const evaluation = JSON.parse(responseText);
 
-      // Strip markdown code fences if present
-      responseText = responseText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
-
-      // Extract JSON object if there is surrounding text
-      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        responseText = jsonMatch[0];
+        await InterviewSession.findByIdAndUpdate(session._id, {
+          aiMarks: evaluation.marks,
+          aiFeedback: evaluation.feedback
+        });
+        console.log(`Background AI evaluation complete for session: ${session._id}`);
+      } catch (aiErr) {
+        console.error(`Background AI error for session ${session._id}:`, aiErr.message);
+        await InterviewSession.findByIdAndUpdate(session._id, {
+          aiFeedback: "Evaluation failed: " + (aiErr.message || "Unknown error")
+        });
       }
-
-      evaluation = JSON.parse(responseText);
-      console.log("==== AI EVALUATION RESULT ====");
-      console.log("Marks:", evaluation.marks);
-      console.log("Feedback:", evaluation.feedback?.substring(0, 100) + '...');
-      console.log("==============================");
-    } catch (aiErr) {
-      console.error('Groq API Error:', aiErr.message || aiErr);
-      const errMsg = aiErr.message || '';
-      if (errMsg.includes('429') || errMsg.toLowerCase().includes('quota') || errMsg.toLowerCase().includes('rate limit')) {
-        return res.status(429).json({ message: 'Groq API rate limit hit. Please wait a moment and try again. Free tier allows 30 requests/min.' });
-      }
-      if (errMsg.includes('401') || errMsg.toLowerCase().includes('invalid api key') || errMsg.toLowerCase().includes('authentication')) {
-        return res.status(401).json({ message: 'Invalid Groq API key. Please check your GROQ_API_KEY in backend/.env' });
-      }
-      return res.status(500).json({ message: 'Failed to evaluate interview via AI. Error: ' + errMsg });
-    }
-
-    const session = new InterviewSession({
-      user: req.user.id,
-      techStack,
-      transcript,
-      cameraVideoUrl,
-      screenVideoUrl,
-      aiMarks: evaluation.marks,
-      aiFeedback: evaluation.feedback
-    });
-
-    await session.save();
-    res.status(201).json(session);
+    })();
 
   } catch (err) {
-    console.error(err.message);
+    console.error("Submission Error:", err.message);
     res.status(500).send('Server Error');
   }
 });
