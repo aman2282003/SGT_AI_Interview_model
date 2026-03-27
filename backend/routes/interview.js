@@ -39,10 +39,10 @@ router.post('/submit', auth, upload.fields([{ name: 'cameraVideo', maxCount: 1 }
     let cameraVideoUrl = null;
     let screenVideoUrl = null;
 
-    if (req.files && req.files['cameraVideo']) {
+    if (req.files && req.files['cameraVideo'] && req.files['cameraVideo'][0].filename) {
       cameraVideoUrl = `/uploads/${req.files['cameraVideo'][0].filename}`;
     }
-    if (req.files && req.files['screenVideo']) {
+    if (req.files && req.files['screenVideo'] && req.files['screenVideo'][0].filename) {
       screenVideoUrl = `/uploads/${req.files['screenVideo'][0].filename}`;
     }
 
