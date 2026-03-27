@@ -128,7 +128,14 @@ export default function InterviewRoom() {
 
   const startRecordingSystem = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Reuse the audio track from camera stream if available to avoid multiple mic requests
+      let stream;
+      if (cameraStreamRef.current && cameraStreamRef.current.getAudioTracks().length > 0) {
+        stream = new MediaStream(cameraStreamRef.current.getAudioTracks());
+      } else {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      }
+      
       audioStreamRef.current = stream;
       setDiagnosticStatus('Recording (Live AI Transcription)...');
       
@@ -242,13 +249,22 @@ export default function InterviewRoom() {
     if (isHardwareReady && !isInterviewStarted) {
       setIsInterviewStarted(true);
       try {
+        // Prepare streams with audio for both recorders
+        const audioTracks = cameraStreamRef.current ? cameraStreamRef.current.getAudioTracks() : [];
+        
         if (streamRef.current && !screenRecorderRef.current) {
-          const sRecorder = new MediaRecorder(streamRef.current, { mimeType: 'video/webm; codecs=vp9' });
+          // Combine screen video with camera audio
+          const screenWithAudio = new MediaStream([
+            ...streamRef.current.getVideoTracks(),
+            ...audioTracks
+          ]);
+          const sRecorder = new MediaRecorder(screenWithAudio, { mimeType: 'video/webm; codecs=vp9' });
           sRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) screenChunksRef.current.push(e.data); };
           sRecorder.start(1000);
           screenRecorderRef.current = sRecorder;
         }
         if (cameraStreamRef.current && !cameraRecorderRef.current) {
+          // Camera stream already includes audio if Webcam audio prop is true
           const cRecorder = new MediaRecorder(cameraStreamRef.current, { mimeType: 'video/webm; codecs=vp9' });
           cRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) cameraChunksRef.current.push(e.data); };
           cRecorder.start(1000);
@@ -256,8 +272,14 @@ export default function InterviewRoom() {
         }
       } catch (err) {
         console.warn("VP9 webm failed, falling back to default media recorder.");
+        const audioTracks = cameraStreamRef.current ? cameraStreamRef.current.getAudioTracks() : [];
+
         if (streamRef.current) {
-          const sRecorder = new MediaRecorder(streamRef.current);
+          const screenWithAudio = new MediaStream([
+            ...streamRef.current.getVideoTracks(),
+            ...audioTracks
+          ]);
+          const sRecorder = new MediaRecorder(screenWithAudio);
           sRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) screenChunksRef.current.push(e.data); };
           sRecorder.start(1000);
           screenRecorderRef.current = sRecorder;
@@ -581,7 +603,7 @@ export default function InterviewRoom() {
           <div className="h-[300px] bg-gray-900 rounded-3xl overflow-hidden relative shadow-lg ring-1 ring-gray-900/10 border border-gray-800 flex items-center justify-center">
             {isCameraRequested ? (
               <Webcam 
-                audio={false} 
+                audio={true} 
                 className="w-full h-full object-cover" 
                 mirrored={true} 
                 onUserMedia={handleUserMedia}
