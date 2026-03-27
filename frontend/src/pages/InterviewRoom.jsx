@@ -251,27 +251,34 @@ export default function InterviewRoom() {
       try {
         // Prepare streams with audio for both recorders
         const audioTracks = cameraStreamRef.current ? cameraStreamRef.current.getAudioTracks() : [];
+        console.log("Starting recorders. Audio tracks found:", audioTracks.length);
         
+        const preferredMimeType = 'video/webm; codecs=vp9,opus';
+        const fallbackMimeType = 'video/webm';
+        const finalMimeType = MediaRecorder.isTypeSupported(preferredMimeType) ? preferredMimeType : fallbackMimeType;
+
         if (streamRef.current && !screenRecorderRef.current) {
           // Combine screen video with camera audio
           const screenWithAudio = new MediaStream([
             ...streamRef.current.getVideoTracks(),
             ...audioTracks
           ]);
-          const sRecorder = new MediaRecorder(screenWithAudio, { mimeType: 'video/webm; codecs=vp9' });
+          console.log("Screen recorder tracks:", screenWithAudio.getTracks().map(t => t.kind));
+          const sRecorder = new MediaRecorder(screenWithAudio, { mimeType: finalMimeType });
           sRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) screenChunksRef.current.push(e.data); };
           sRecorder.start(1000);
           screenRecorderRef.current = sRecorder;
         }
         if (cameraStreamRef.current && !cameraRecorderRef.current) {
           // Camera stream already includes audio if Webcam audio prop is true
-          const cRecorder = new MediaRecorder(cameraStreamRef.current, { mimeType: 'video/webm; codecs=vp9' });
+          console.log("Camera recorder tracks:", cameraStreamRef.current.getTracks().map(t => t.kind));
+          const cRecorder = new MediaRecorder(cameraStreamRef.current, { mimeType: finalMimeType });
           cRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) cameraChunksRef.current.push(e.data); };
           cRecorder.start(1000);
           cameraRecorderRef.current = cRecorder;
         }
       } catch (err) {
-        console.warn("VP9 webm failed, falling back to default media recorder.");
+        console.warn("VP media recorder failed, falling back to default.", err);
         const audioTracks = cameraStreamRef.current ? cameraStreamRef.current.getAudioTracks() : [];
 
         if (streamRef.current) {
@@ -581,7 +588,7 @@ export default function InterviewRoom() {
                         onClick={handleNextQuestion}
                         className="py-4 px-6 rounded-2xl font-bold text-gray-700 bg-white border-2 border-gray-200 hover:bg-gray-50 hover:border-gray-300 flex items-center justify-center transition-all shadow-sm"
                       >
-                        Skip to Next Question <ChevronRight className="w-5 h-5 ml-1" />
+                        Next <ChevronRight className="w-5 h-5 ml-1" />
                       </button>
                     ) : (
                       <button 
