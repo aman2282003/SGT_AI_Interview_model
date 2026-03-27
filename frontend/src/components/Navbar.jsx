@@ -33,6 +33,12 @@ export default function Navbar() {
                   <History className="h-4 w-4" />
                   <span>My Interviews</span>
                 </Link>
+                {user.isAdmin && (
+                  <Link to="/admin/sessions" className="flex items-center space-x-1 text-indigo-600 hover:text-indigo-700 font-bold transition-colors">
+                    <BrainCircuit className="h-4 w-4" />
+                    <span>Admin Panel</span>
+                  </Link>
+                )}
                 <button
                   onClick={logout}
                   className="flex items-center space-x-1 text-gray-500 hover:text-red-600 transition-colors font-medium"

@@ -10,11 +10,19 @@ import InterviewRoom from './pages/InterviewRoom';
 import Results from './pages/Results';
 
 import MyInterviews from './pages/MyInterviews';
+import AdminSessions from './pages/AdminSessions';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useContext(AuthContext);
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   if (!user) return <Navigate to="/login" replace />;
+  return children;
+};
+
+const ProtectedAdminRoute = ({ children }) => {
+  const { user, loading } = useContext(AuthContext);
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (!user || !user.isAdmin) return <Navigate to="/dashboard" replace />;
   return children;
 };
 
@@ -38,6 +46,11 @@ function App() {
                 <ProtectedRoute>
                   <MyInterviews />
                 </ProtectedRoute>
+              } />
+              <Route path="/admin/sessions" element={
+                <ProtectedAdminRoute>
+                  <AdminSessions />
+                </ProtectedAdminRoute>
               } />
               <Route path="/interview/:tech" element={
                 <ProtectedRoute>

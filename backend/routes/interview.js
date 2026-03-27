@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const InterviewSession = require('../models/InterviewSession');
+const User = require('../models/User');
 const Groq = require('groq-sdk');
 const multer = require('multer');
 const path = require('path');
@@ -59,13 +60,15 @@ router.post('/submit', auth, upload.fields([{ name: 'cameraVideo', maxCount: 1 }
       return res.status(500).json({ message: 'AI configuration is missing. Add your GROQ_API_KEY in backend/.env and restart the server. Get a free key at console.groq.com' });
     }
 
-    const prompt = `You are an encouraging and lenient technical interviewer. The candidate took an interview for the following tech stack: ${techStack}.
+    const prompt = `You are a professional technical interviewer. The candidate took an interview for the following tech stack: ${techStack}.
 They were asked multiple questions. Here is the transcript of the interview questions and their recorded answers:
 
 "${transcript}"
 
-Evaluate their combined answers. Be very generous and friendly with the scoring. Give higher marks even for basic or beginner attempts. Only give 0 if they provided absolutely zero meaningful content.
-Within your feedback, you MUST include a specific section called "Suggestions for Improvement" telling them exactly what they can do better next time.
+Evaluate their combined answers. Be encouraging but fair with the scoring. 
+- If the candidate provided absolutely zero meaningful content, or if most answers are "No answer provided.", you MUST give 0 marks.
+- For basic or beginner attempts, you can be friendly and give some marks, but ensure the score reflects their actual knowledge.
+- Within your feedback, you MUST include a specific section called "Suggestions for Improvement" telling them exactly what they can do better next time.
 You MUST respond with ONLY valid JSON. No extra text, no markdown, no code blocks. Just the raw JSON object:
 {"marks": <integer 0-100>, "feedback": "<detailed friendly feedback, including Suggestions for Improvement at the end>"}`;
 
@@ -155,6 +158,25 @@ router.post('/transcribe', auth, upload.single('audio'), async (req, res) => {
     console.error("Transcription failed:", err.message);
     if (req.file) fs.unlinkSync(req.file.path);
     res.status(500).json({ message: 'Failed to transcribe audio' });
+  }
+});
+
+// Get all sessions (Admin only)
+router.get('/admin/all', auth, async (req, res) => {
+  try {
+    // Basic admin check (requires isAdmin field in User model)
+    const user = await User.findById(req.user.id);
+    if (!user || !user.isAdmin) {
+      return res.status(403).json({ message: 'Access denied. Admin only.' });
+    }
+
+    const sessions = await InterviewSession.find()
+      .populate('user', 'name email')
+      .sort({ createdAt: -1 });
+    res.json(sessions);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
   }
 });
 
