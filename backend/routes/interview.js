@@ -8,19 +8,32 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+
+// Cloudinary Configuration
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
 const uploadDir = path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadDir);
+// Cloudinary Storage for Videos
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'ai-interviewer-recordings',
+    resource_type: 'video',
+    format: async (req, file) => 'webm', // Keep webm format
+    public_id: (req, file) => `${req.user.id}-${Date.now()}-${file.fieldname}`
   },
-  filename: function (req, file, cb) {
-    cb(null, `${req.user.id}-${Date.now()}-${file.fieldname}.webm`);
-  }
 });
+
 const upload = multer({ storage: storage });
 
 // Helper to get a Groq client (validates key first)
@@ -43,13 +56,13 @@ router.post('/submit', auth, upload.fields([{ name: 'cameraVideo', maxCount: 1 }
     console.log("Files received:", req.files);
     console.log("Body received:", req.body);
 
-    if (req.files && req.files['cameraVideo'] && req.files['cameraVideo'][0].filename) {
-      cameraVideoUrl = `/uploads/${req.files['cameraVideo'][0].filename}`;
-      console.log("Camera video URL set:", cameraVideoUrl);
+    if (req.files && req.files['cameraVideo'] && req.files['cameraVideo'][0].path) {
+      cameraVideoUrl = req.files['cameraVideo'][0].path;
+      console.log("Camera video URL set (Cloudinary):", cameraVideoUrl);
     }
-    if (req.files && req.files['screenVideo'] && req.files['screenVideo'][0].filename) {
-      screenVideoUrl = `/uploads/${req.files['screenVideo'][0].filename}`;
-      console.log("Screen video URL set:", screenVideoUrl);
+    if (req.files && req.files['screenVideo'] && req.files['screenVideo'][0].path) {
+      screenVideoUrl = req.files['screenVideo'][0].path;
+      console.log("Screen video URL set (Cloudinary):", screenVideoUrl);
     }
 
     if (!techStack || !transcript) {

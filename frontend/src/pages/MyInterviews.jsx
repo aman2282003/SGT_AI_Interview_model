@@ -132,7 +132,10 @@ export default function MyInterviews() {
                             <MonitorUp className="w-3 h-3 mr-1.5" /> Screen Capture
                           </div>
                           <video controls playsInline className="w-full h-auto max-h-[250px] object-cover">
-                            <source src={`${import.meta.env.VITE_HOST}${session.screenVideoUrl}`} type="video/webm" />
+                            <source 
+                              src={session.screenVideoUrl.startsWith('http') ? session.screenVideoUrl : `${import.meta.env.VITE_HOST}${session.screenVideoUrl}`} 
+                              type="video/webm" 
+                            />
                             Your browser does not support the video tag.
                           </video>
                         </div>
@@ -144,7 +147,10 @@ export default function MyInterviews() {
                             <Video className="w-3 h-3 mr-1.5" /> Camera
                           </div>
                           <video controls playsInline className="w-full h-auto max-h-[250px] object-cover">
-                            <source src={`${import.meta.env.VITE_HOST}${session.cameraVideoUrl}`} type="video/webm" />
+                            <source 
+                              src={session.cameraVideoUrl.startsWith('http') ? session.cameraVideoUrl : `${import.meta.env.VITE_HOST}${session.cameraVideoUrl}`} 
+                              type="video/webm" 
+                            />
                             Your browser does not support the video tag.
                           </video>
                         </div>
