@@ -33,8 +33,18 @@ const storage = new CloudinaryStorage({
     public_id: (req, file) => `${req.user.id}-${Date.now()}-${file.fieldname}`
   },
 });
-
 const upload = multer({ storage: storage });
+
+// Local Storage for temporary audio transcription
+const localStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    cb(null, `temp-${Date.now()}-${file.originalname}`);
+  }
+});
+const localUpload = multer({ storage: localStorage });
 
 // Helper to get a Groq client (validates key first)
 function getGroqClient() {
@@ -143,7 +153,7 @@ You MUST respond with ONLY valid JSON. No extra text, no markdown, no code block
 });
 
 // Transcribe audio fallback (Groq Whisper)
-router.post('/transcribe', auth, upload.single('audio'), async (req, res) => {
+router.post('/transcribe', auth, localUpload.single('audio'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No audio file provided' });

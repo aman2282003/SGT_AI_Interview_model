@@ -10,3 +10,38 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Dark mode utility classes */
+.dark body {
+  background-color: #030712;
+  color: #f9fafb;
+}
+
+.dark .bg-white {
+  background-color: #111827;
+}
+
+.dark .bg-gray-50 {
+  background-color: #030712;
+}
+
+.dark .text-gray-900 {
+  color: #f9fafb;
+}
+
+.dark .text-gray-700 {
+  color: #e5e7eb;
+}
+
+.dark .text-gray-600 {
+  color: #d1d5db;
+}
+
+.dark .border-gray-100, .dark .border-gray-200 {
+  border-color: #1f2937;
+}
+
+/* Smooth transitions for theme switching */
+body, nav, div, section, main, h1, h2, h3, h4, p, span, button, input, textarea {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, shadow 0.3s ease;
+}

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
-const { GoogleGenAI } = require('@google/genai');
+const Groq = require('groq-sdk');
 
 router.post('/run', auth, async (req, res) => {
   try {
@@ -11,13 +11,14 @@ router.post('/run', auth, async (req, res) => {
       return res.status(400).json({ message: 'Code is required for execution' });
     }
 
-    if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'your_gemini_api_key_here') {
-      return res.status(500).json({ message: 'AI configuration missing' });
+    const key = process.env.GROQ_API_KEY;
+    if (!key || key === 'your_groq_api_key_here') {
+      return res.status(500).json({ message: 'AI configuration missing (GROQ_API_KEY)' });
     }
 
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const groq = new Groq({ apiKey: key });
 
-    // Using Gemini to explicitly simulate code execution safely, including React DOM resolution.
+    // Using Groq Llama 3 to simulate code execution safely
     const prompt = `You are a strict, purely deterministic Code Execution Engine. 
     The user has submitted code in the language: ${language}.
     
@@ -40,23 +41,25 @@ router.post('/run', auth, async (req, res) => {
       "passed": <boolean, true if all tests pass or no syntax errors>
     }`;
 
-    const result = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.1, // Low temperature for deterministic output
+      max_tokens: 1024,
     });
 
-    let responseText = result.text.trim();
-    if (responseText.startsWith('```json')) {
-       responseText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-    } else if (responseText.startsWith('```')) {
-       responseText = responseText.replace(/```/g, '').trim();
-    }
+    let responseText = completion.choices[0]?.message?.content?.trim() || '';
+    
+    // Clean up response to ensure valid JSON
+    responseText = responseText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) responseText = jsonMatch[0];
 
     const executionResult = JSON.parse(responseText);
     res.json(executionResult);
 
   } catch (err) {
-    console.error('Code Execution Failed:', err);
+    console.error('Code Execution Failed (Groq):', err);
     res.status(500).json({ output: 'Execution Engine Error / Timeout', passed: false });
   }
 });

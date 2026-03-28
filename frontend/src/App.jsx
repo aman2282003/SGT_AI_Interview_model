@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, AuthContext } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { useContext } from 'react';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
@@ -29,43 +30,45 @@ const ProtectedAdminRoute = ({ children }) => {
 function App() {
   return (
     <Router>
-      <AuthProvider>
-        <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
-          <Navbar />
-          <main className="flex-1 w-full flex flex-col pt-16 mt-[-4rem]"> {/* Adjust for fixed navbar */}
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/my-interviews" element={
-                <ProtectedRoute>
-                  <MyInterviews />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/sessions" element={
-                <ProtectedAdminRoute>
-                  <AdminSessions />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/interview/:tech" element={
-                <ProtectedRoute>
-                  <InterviewRoom />
-                </ProtectedRoute>
-              } />
-              <Route path="/results/:id" element={
-                <ProtectedRoute>
-                  <Results />
-                </ProtectedRoute>
-              } />
-            </Routes>
-          </main>
-        </div>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <div className="min-h-screen flex flex-col font-sans transition-colors duration-300">
+            <Navbar />
+            <main className="flex-1 w-full flex flex-col pt-16 mt-[-4rem]"> {/* Adjust for fixed navbar */}
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/dashboard" element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/my-interviews" element={
+                  <ProtectedRoute>
+                    <MyInterviews />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/sessions" element={
+                  <ProtectedAdminRoute>
+                    <AdminSessions />
+                  </ProtectedAdminRoute>
+                } />
+                <Route path="/interview/:tech" element={
+                  <ProtectedRoute>
+                    <InterviewRoom />
+                  </ProtectedRoute>
+                } />
+                <Route path="/results/:id" element={
+                  <ProtectedRoute>
+                    <Results />
+                  </ProtectedRoute>
+                } />
+              </Routes>
+            </main>
+          </div>
+        </AuthProvider>
+      </ThemeProvider>
     </Router>
   );
 }

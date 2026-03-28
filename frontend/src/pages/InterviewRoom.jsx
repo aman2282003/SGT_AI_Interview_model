@@ -452,25 +452,25 @@ export default function InterviewRoom() {
   // Strict requirement: must have camera AND screen sharing active
 
   return (
-    <div className="max-w-[100rem] mx-auto px-4 sm:px-6 lg:px-8 py-8 h-[calc(100vh-4rem)] flex flex-col">
+    <div className="max-w-[100rem] mx-auto px-4 sm:px-6 lg:px-8 py-8 h-[calc(100vh-4rem)] flex flex-col transition-colors duration-300">
       <div className="flex justify-between items-center mb-6">
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight capitalize">{tech} Technical Interview</h2>
+            <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight capitalize transition-colors duration-300">{tech} Technical Interview</h2>
             {isHardwareReady && (
-              <span className="bg-indigo-100 text-indigo-700 px-4 py-1.5 rounded-full text-sm font-bold shadow-sm">
+              <span className="bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 px-4 py-1.5 rounded-full text-sm font-bold shadow-sm transition-colors duration-300">
                 Question {currentIndex + 1} of {questions.length}
               </span>
             )}
           </div>
         </div>
         <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2 text-sm font-medium bg-white px-5 py-2.5 rounded-full shadow-sm border border-gray-100">
+          <div className="flex items-center space-x-2 text-sm font-medium bg-white dark:bg-gray-900 px-5 py-2.5 rounded-full shadow-sm border border-gray-100 dark:border-gray-800 transition-colors duration-300">
             <span className="relative flex h-3 w-3">
               {isRecording && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>}
               <span className={`relative inline-flex rounded-full h-3 w-3 ${isRecording ? 'bg-red-500' : 'bg-gray-300'}`}></span>
             </span>
-            <span className={isRecording ? 'text-red-600 font-bold' : 'text-gray-500 font-semibold'}>
+            <span className={isRecording ? 'text-red-600 dark:text-red-400 font-bold' : 'text-gray-500 dark:text-gray-400 font-semibold'}>
               {diagnosticStatus}
             </span>
           </div>
@@ -480,25 +480,25 @@ export default function InterviewRoom() {
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-8 mb-4">
         {/* LEFT COMPONENT */}
         <div className="lg:col-span-3 flex flex-col space-y-6">
-          <div className="bg-white rounded-[2rem] shadow-sm border border-indigo-100 p-8 flex flex-col flex-1 relative overflow-hidden">
+          <div className="bg-white dark:bg-gray-900 rounded-[2rem] shadow-sm border border-indigo-100 dark:border-gray-800 p-8 flex flex-col flex-1 relative overflow-hidden transition-colors duration-300">
              
              {!didActuallyStart ? (
                <div className="flex-1 flex flex-col items-center justify-center text-center z-10 w-full">
-                 <div className="bg-amber-100 p-5 rounded-full mb-6">
-                   <AlertTriangle className="w-12 h-12 text-amber-600" />
+                 <div className="bg-amber-100 dark:bg-amber-900/30 p-5 rounded-full mb-6 transition-colors duration-300">
+                   <AlertTriangle className="w-12 h-12 text-amber-600 dark:text-amber-400" />
                  </div>
-                 <h3 className="text-3xl font-extrabold text-gray-900 mb-4 tracking-tight">Hardware Setup Required</h3>
-                 <p className="text-gray-600 text-lg max-w-lg mx-auto mb-10 font-medium leading-relaxed">
+                 <h3 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-4 tracking-tight transition-colors duration-300">Hardware Setup Required</h3>
+                 <p className="text-gray-600 dark:text-gray-400 text-lg max-w-lg mx-auto mb-10 font-medium leading-relaxed transition-colors duration-300">
                    To unlock your interview questions and begin, you must first <strong>grant camera access</strong> and <strong>start sharing your screen</strong>.
                  </p>
                  <div className="flex flex-col sm:flex-row justify-center gap-6 w-full max-w-xl">
-                    <div className={`p-5 rounded-2xl border-2 flex items-center justify-center gap-3 w-full transition-all ${hasCamera ? 'border-green-500 bg-green-50 text-green-700 shadow-sm' : 'border-gray-200 bg-gray-50 text-gray-500'}`}>
+                    <div className={`p-5 rounded-2xl border-2 flex items-center justify-center gap-3 w-full transition-all ${hasCamera ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 shadow-sm' : 'border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400'}`}>
                       <Video className="w-6 h-6" />
                       <span className="font-bold text-lg">{hasCamera ? 'Camera Ready' : 'Waiting for Camera...'}</span>
                     </div>
                     <button 
                       onClick={!isScreenSharing ? startScreenShare : undefined}
-                      className={`p-5 rounded-2xl border-2 flex items-center justify-center gap-3 w-full transition-all ${isScreenSharing ? 'border-green-500 bg-green-50 text-green-700 shadow-sm cursor-default' : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer shadow-sm hover:shadow-md transform hover:-translate-y-0.5'}`}
+                      className={`p-5 rounded-2xl border-2 flex items-center justify-center gap-3 w-full transition-all ${isScreenSharing ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 shadow-sm cursor-default' : 'border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 hover:border-indigo-300 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-indigo-700 dark:hover:text-indigo-400 cursor-pointer shadow-sm hover:shadow-md transform hover:-translate-y-0.5'}`}
                     >
                       <MonitorUp className="w-6 h-6" />
                       <span className="font-bold text-lg">{isScreenSharing ? 'Screen Ready' : 'Click to Share Screen'}</span>
@@ -507,21 +507,21 @@ export default function InterviewRoom() {
                </div>
              ) : (
                 <>
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-bl-full -z-10"></div>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 dark:bg-indigo-950/30 rounded-bl-full -z-10 transition-colors duration-300"></div>
                   
-                  <h3 className="uppercase tracking-widest text-indigo-600 font-bold text-xs mb-3">Live Question</h3>
-                  <p className="text-gray-900 font-bold text-2xl leading-relaxed">
+                  <h3 className="uppercase tracking-widest text-indigo-600 dark:text-indigo-400 font-bold text-xs mb-3 transition-colors duration-300">Live Question</h3>
+                  <p className="text-gray-900 dark:text-white font-bold text-2xl leading-relaxed transition-colors duration-300">
                     {typeof currentQ === 'string' ? currentQ : currentQ.prompt}
                   </p>
 
-                  <hr className="my-8 border-gray-100" />
+                  <hr className="my-8 border-gray-100 dark:border-gray-800 transition-colors duration-300" />
                   
                   {typeof currentQ === 'object' && currentQ.type === 'coding' ? (
                      <div className="flex-1 flex flex-col space-y-4">
-                       <h3 className="font-semibold text-gray-900 flex items-center text-lg">
-                          <Code2 className="w-5 h-5 mr-2 text-indigo-600" /> Integrated Code Editor
+                       <h3 className="font-semibold text-gray-900 dark:text-white flex items-center text-lg transition-colors duration-300">
+                          <Code2 className="w-5 h-5 mr-2 text-indigo-600 dark:text-indigo-400" /> Integrated Code Editor
                        </h3>
-                       <div className="flex-1 bg-[#1e1e1e] rounded-2xl overflow-hidden border border-gray-300 shadow-inner min-h-[300px] p-2 pt-4">
+                       <div className="flex-1 bg-[#1e1e1e] rounded-2xl overflow-hidden border border-gray-300 dark:border-gray-700 shadow-inner min-h-[300px] p-2 pt-4 transition-colors duration-300">
                          <Editor 
                            height="100%" 
                            language={currentQ.language} 
@@ -538,7 +538,7 @@ export default function InterviewRoom() {
                            {isExecuting ? 'Running Analysis...' : 'Run Code & Tests'}
                          </button>
                          {codeOutput && (
-                           <div className={`px-4 py-3 rounded-xl font-bold flex-1 text-center ${codeOutput.passed ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>
+                           <div className={`px-4 py-3 rounded-xl font-bold flex-1 text-center transition-colors duration-300 ${codeOutput.passed ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'}`}>
                              {codeOutput.passed ? 'Status: All Tests Passed' : 'Status: Failed / Syntax Error'}
                            </div>
                          )}
@@ -551,22 +551,22 @@ export default function InterviewRoom() {
                        )}
                        
                        {/* Mini transcript so they can still see they are recording */}
-                       <div className="mt-4 flex items-center justify-between bg-indigo-50 px-4 py-3 rounded-xl border border-indigo-100">
+                       <div className="mt-4 flex items-center justify-between bg-indigo-50 dark:bg-indigo-950/30 px-4 py-3 rounded-xl border border-indigo-100 dark:border-gray-800 transition-colors duration-300">
                          <div className="flex items-center gap-2">
-                           <span className={`w-2.5 h-2.5 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-gray-400'}`}></span>
-                           <span className="text-sm font-bold text-gray-700">{isRecording ? 'Capturing Voice...' : 'Mic Paused'}</span>
+                           <span className={`w-2.5 h-2.5 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-gray-400 dark:bg-gray-600'}`}></span>
+                           <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{isRecording ? 'Capturing Voice...' : 'Mic Paused'}</span>
                          </div>
-                         <div className="text-xs text-indigo-400 truncate max-w-xs">{currentAnswer.slice(-50) + " " + interimAnswer}</div>
+                         <div className="text-xs text-indigo-400 dark:text-indigo-500 truncate max-w-xs">{currentAnswer.slice(-50) + " " + interimAnswer}</div>
                        </div>
                      </div>
                   ) : (
                     <>
-                      <h3 className="font-semibold text-gray-900 mb-4 flex items-center text-lg">
-                          <Mic className="w-5 h-5 mr-2 text-indigo-600" /> Live Transcript Feed
+                      <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center text-lg transition-colors duration-300">
+                          <Mic className="w-5 h-5 mr-2 text-indigo-600 dark:text-indigo-400" /> Live Transcript Feed
                       </h3>
-                      <div className="flex-1 bg-gray-50 rounded-2xl p-6 shadow-inner relative flex flex-col min-h-[250px]">
+                      <div className="flex-1 bg-gray-50 dark:bg-gray-950 rounded-2xl p-6 shadow-inner relative flex flex-col min-h-[250px] transition-colors duration-300">
                         <textarea
-                          className="w-full h-full bg-transparent resize-none outline-none text-gray-700 leading-relaxed font-medium"
+                          className="w-full h-full bg-transparent resize-none outline-none text-gray-700 dark:text-gray-300 leading-relaxed font-medium transition-colors duration-300"
                           placeholder='Press "Start Recording" to speak, or click here to manually type your answer if voice recording fails...'
                           value={currentAnswer}
                           onChange={(e) => setCurrentAnswer(e.target.value)}
@@ -581,7 +581,7 @@ export default function InterviewRoom() {
                   <div className="grid grid-cols-2 gap-4 mt-8">
                     <button 
                         onClick={toggleRecording}
-                        className={`py-4 px-6 rounded-2xl font-bold flex items-center justify-center transition-all duration-300 ${isRecording ? 'bg-red-50 text-red-600 hover:bg-red-100 border-2 border-red-200 shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)]' : 'bg-indigo-60 text-white bg-indigo-600 hover:bg-indigo-700 border-2 border-indigo-600 shadow-xl shadow-indigo-200 transform hover:-translate-y-1'}`}
+                        className={`py-4 px-6 rounded-2xl font-bold flex items-center justify-center transition-all duration-300 ${isRecording ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 border-2 border-red-200 dark:border-red-900/30 shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)]' : 'bg-indigo-600 text-white hover:bg-indigo-700 border-2 border-indigo-600 shadow-xl shadow-indigo-200 dark:shadow-none transform hover:-translate-y-1'}`}
                       >
                       {isRecording ? <><StopCircle className="w-6 h-6 mr-2 animate-pulse" /> Stop Recording</> : <><PlayCircle className="w-6 h-6 mr-2" /> Start Recording</>}
                     </button>
@@ -589,7 +589,7 @@ export default function InterviewRoom() {
                     {currentIndex < questions.length - 1 ? (
                       <button 
                         onClick={handleNextQuestion}
-                        className="py-4 px-6 rounded-2xl font-bold text-gray-700 bg-white border-2 border-gray-200 hover:bg-gray-50 hover:border-gray-300 flex items-center justify-center transition-all shadow-sm"
+                        className="py-4 px-6 rounded-2xl font-bold text-gray-700 dark:text-white bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600 flex items-center justify-center transition-all shadow-sm"
                       >
                         Next <ChevronRight className="w-5 h-5 ml-1" />
                       </button>
@@ -597,7 +597,7 @@ export default function InterviewRoom() {
                       <button 
                         onClick={submitInterview}
                         disabled={isSubmitting}
-                        className="py-4 px-6 rounded-2xl font-bold text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-green-200 flex items-center justify-center transition-all transform hover:-translate-y-1"
+                        className="py-4 px-6 rounded-2xl font-bold text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-green-200 dark:shadow-none flex items-center justify-center transition-all transform hover:-translate-y-1"
                       >
                         {isSubmitting ? <><Loader2 className="w-6 h-6 mr-2 animate-spin" /> Evaluating with AI...</> : 'Complete & Evaluate'}
                       </button>
@@ -610,7 +610,7 @@ export default function InterviewRoom() {
 
         {/* RIGHT COMPONENT */}
         <div className="lg:col-span-2 flex flex-col space-y-6">
-          <div className="h-[300px] bg-gray-900 rounded-3xl overflow-hidden relative shadow-lg ring-1 ring-gray-900/10 border border-gray-800 flex items-center justify-center">
+          <div className="h-[300px] bg-gray-900 rounded-3xl overflow-hidden relative shadow-lg ring-1 ring-gray-900/10 border border-gray-800 flex items-center justify-center transition-colors duration-300">
             {isCameraRequested ? (
               <Webcam 
                 audio={true} 
@@ -632,13 +632,13 @@ export default function InterviewRoom() {
               </div>
             )}
             
-            <div className={`absolute top-4 left-4 backdrop-blur-md px-4 py-2 rounded-xl text-white/90 text-sm font-bold flex items-center shadow-sm ${hasCamera ? 'bg-black/60' : 'bg-red-600/80'}`}>
+            <div className={`absolute top-4 left-4 backdrop-blur-md px-4 py-2 rounded-xl text-white/90 text-sm font-bold flex items-center shadow-sm transition-colors duration-300 ${hasCamera ? 'bg-black/60 dark:bg-black/80' : 'bg-red-600/80'}`}>
               <span className={`w-2 h-2 rounded-full mr-2 ${hasCamera ? 'bg-green-500 animate-pulse' : 'bg-white'}`}></span> 
               {hasCamera ? 'Personal Camera' : 'Camera Blocked'}
             </div>
           </div>
 
-          <div className="flex-1 bg-gray-900 rounded-3xl overflow-hidden relative shadow-lg ring-1 ring-gray-900/10 flex items-center justify-center border border-gray-800 min-h-[300px]">
+          <div className="flex-1 bg-gray-900 rounded-3xl overflow-hidden relative shadow-lg ring-1 ring-gray-900/10 flex items-center justify-center border border-gray-800 min-h-[300px] transition-colors duration-300">
             <video 
               ref={screenRef} 
               autoPlay 
@@ -660,7 +660,7 @@ export default function InterviewRoom() {
               </div>
             )}
             
-            <div className={`absolute top-4 left-4 backdrop-blur-md px-4 py-2 rounded-xl text-white/90 text-sm font-bold flex items-center shadow-sm z-20 ${isScreenSharing ? 'bg-black/60' : 'bg-red-600/80'}`}>
+            <div className={`absolute top-4 left-4 backdrop-blur-md px-4 py-2 rounded-xl text-white/90 text-sm font-bold flex items-center shadow-sm z-20 transition-colors duration-300 ${isScreenSharing ? 'bg-black/60 dark:bg-black/80' : 'bg-red-600/80'}`}>
               <MonitorUp className="w-4 h-4 mr-2" /> {isScreenSharing ? 'Presenter Screen' : 'Screen share required'}
             </div>
           </div>
