@@ -139,7 +139,10 @@ export default function Results() {
                         <div className="absolute top-4 left-4 bg-black/70 backdrop-blur-md px-4 py-2 rounded-xl text-white text-xs font-bold flex items-center z-10 opacity-100 transition-opacity">
                           <MonitorUp className="w-4 h-4 mr-2" /> Screen Capture
                         </div>
-                        <video src={`${import.meta.env.VITE_HOST}${session.screenVideoUrl}`} controls className="w-full h-auto max-h-[400px]" />
+                        <video controls playsInline className="w-full h-auto max-h-[400px]">
+                          <source src={`${import.meta.env.VITE_HOST}${session.screenVideoUrl}`} type="video/webm" />
+                          Your browser does not support the video tag.
+                        </video>
                       </div>
                     )}
                     {session.cameraVideoUrl && (
@@ -147,7 +150,10 @@ export default function Results() {
                         <div className="absolute top-4 left-4 bg-black/70 backdrop-blur-md px-4 py-2 rounded-xl text-white text-xs font-bold flex items-center z-10 opacity-100 transition-opacity">
                           <Video className="w-4 h-4 mr-2" /> Personal Camera
                         </div>
-                        <video src={`${import.meta.env.VITE_HOST}${session.cameraVideoUrl}`} controls className="w-full h-auto max-h-[300px]" />
+                        <video controls playsInline className="w-full h-auto max-h-[300px]">
+                          <source src={`${import.meta.env.VITE_HOST}${session.cameraVideoUrl}`} type="video/webm" />
+                          Your browser does not support the video tag.
+                        </video>
                       </div>
                     )}
                   </div>

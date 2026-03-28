@@ -21,6 +21,7 @@ export default function InterviewRoom() {
   const [isCameraRequested, setIsCameraRequested] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isInterviewStarted, setIsInterviewStarted] = useState(false);
+  const [didActuallyStart, setDidActuallyStart] = useState(false);
   
   // Debug / Diagnostics
   const [diagnosticStatus, setDiagnosticStatus] = useState('Idle');
@@ -248,6 +249,7 @@ export default function InterviewRoom() {
   useEffect(() => {
     if (isHardwareReady && !isInterviewStarted) {
       setIsInterviewStarted(true);
+      setDidActuallyStart(true);
       try {
         // Prepare streams with audio for both recorders
         const audioTracks = cameraStreamRef.current ? cameraStreamRef.current.getAudioTracks() : [];
@@ -424,8 +426,9 @@ export default function InterviewRoom() {
       const token = localStorage.getItem('token');
       const res = await axios.post(`${import.meta.env.VITE_HOST}/api/interview/submit`, formData, {
         headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
+          Authorization: `Bearer ${token}`
+          // REMOVED: 'Content-Type': 'multipart/form-data' 
+          // Axios sets the correct boundary automatically when passing FormData
         }
       });
       localStorage.removeItem('interview_progress');
@@ -479,7 +482,7 @@ export default function InterviewRoom() {
         <div className="lg:col-span-3 flex flex-col space-y-6">
           <div className="bg-white rounded-[2rem] shadow-sm border border-indigo-100 p-8 flex flex-col flex-1 relative overflow-hidden">
              
-             {!isHardwareReady ? (
+             {!didActuallyStart ? (
                <div className="flex-1 flex flex-col items-center justify-center text-center z-10 w-full">
                  <div className="bg-amber-100 p-5 rounded-full mb-6">
                    <AlertTriangle className="w-12 h-12 text-amber-600" />

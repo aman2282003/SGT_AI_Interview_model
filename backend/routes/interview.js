@@ -40,11 +40,16 @@ router.post('/submit', auth, upload.fields([{ name: 'cameraVideo', maxCount: 1 }
     let cameraVideoUrl = null;
     let screenVideoUrl = null;
 
+    console.log("Files received:", req.files);
+    console.log("Body received:", req.body);
+
     if (req.files && req.files['cameraVideo'] && req.files['cameraVideo'][0].filename) {
       cameraVideoUrl = `/uploads/${req.files['cameraVideo'][0].filename}`;
+      console.log("Camera video URL set:", cameraVideoUrl);
     }
     if (req.files && req.files['screenVideo'] && req.files['screenVideo'][0].filename) {
       screenVideoUrl = `/uploads/${req.files['screenVideo'][0].filename}`;
+      console.log("Screen video URL set:", screenVideoUrl);
     }
 
     if (!techStack || !transcript) {

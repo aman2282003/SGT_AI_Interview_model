@@ -152,7 +152,10 @@ export default function AdminSessions() {
                           <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-lg text-white text-xs font-bold flex items-center z-10">
                             <MonitorUp className="w-3 h-3 mr-1.5" /> Screen Capture
                           </div>
-                          <video src={`${import.meta.env.VITE_HOST}${session.screenVideoUrl}`} controls className="w-full h-auto max-h-[250px] object-cover" />
+                          <video controls playsInline className="w-full h-auto max-h-[250px] object-cover">
+                            <source src={`${import.meta.env.VITE_HOST}${session.screenVideoUrl}`} type="video/webm" />
+                            Your browser does not support the video tag.
+                          </video>
                         </div>
                       )}
                       
@@ -161,7 +164,10 @@ export default function AdminSessions() {
                           <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-lg text-white text-xs font-bold flex items-center z-10">
                             <Video className="w-3 h-3 mr-1.5" /> Camera
                           </div>
-                          <video src={`${import.meta.env.VITE_HOST}${session.cameraVideoUrl}`} controls className="w-full h-auto max-h-[250px] object-cover" />
+                          <video controls playsInline className="w-full h-auto max-h-[250px] object-cover">
+                            <source src={`${import.meta.env.VITE_HOST}${session.cameraVideoUrl}`} type="video/webm" />
+                            Your browser does not support the video tag.
+                          </video>
                         </div>
                       )}
                     </div>
