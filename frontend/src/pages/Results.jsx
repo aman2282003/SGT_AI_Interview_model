@@ -56,7 +56,7 @@ export default function Results() {
     <div className="min-h-[calc(100vh-4rem)] flex justify-center items-center flex-col space-y-4">
       <AlertCircle className="w-16 h-16 text-red-500" />
       <h2 className="text-xl font-semibold">{error}</h2>
-      <button onClick={() => navigate('/dashboard')} className="text-indigo-600 hover:underline font-bold">Return to Dashboard</button>
+      <button onClick={() => navigate('/dashboard')} className="px-6 py-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-xl font-bold border border-indigo-200 dark:border-indigo-800/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all">Return to Dashboard</button>
     </div>
   );
   if (!session) return null;
@@ -67,7 +67,7 @@ export default function Results() {
 
   return (
     <div className="max-w-[75rem] mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8 transition-colors duration-300">
-      <button onClick={() => navigate('/dashboard')} className="flex items-center text-sm font-bold text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors group">
+      <button onClick={() => navigate('/dashboard')} className="flex items-center px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-bold text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all group bg-white dark:bg-gray-900 shadow-sm hover:shadow-md">
         <ChevronLeft className="w-5 h-5 mr-1 transform group-hover:-translate-x-1 transition-transform" /> Back to Dashboard
       </button>
 

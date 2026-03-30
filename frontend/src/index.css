@@ -12,9 +12,18 @@ body {
 }
 
 /* Dark mode utility classes */
-.dark body {
-  background-color: #030712;
-  color: #f9fafb;
+.dark body, .dark #root, .dark .min-h-screen {
+  background-color: #030712 !important;
+  color: #f9fafb !important;
+}
+
+.dark nav {
+  background-color: rgba(17, 24, 39, 0.8) !important;
+  border-color: #1f2937 !important;
+}
+
+.dark .bg-white, .dark .bg-white\/80, .dark .bg-white\/70 {
+  background-color: #111827 !important;
 }
 
 .dark .bg-white {

@@ -1,3 +1,5 @@
+import { useContext } from 'react';
+import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { BrainCircuit, LogOut, LayoutDashboard, History, Sun, Moon } from 'lucide-react';
@@ -7,7 +9,7 @@ export default function Navbar() {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <nav className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-sm border-b border-gray-100 dark:border-gray-800 sticky top-0 z-50 transition-colors duration-300">
+    <nav className="bg-white/80 dark:bg-gray-950 backdrop-blur-md shadow-sm border-b border-gray-100 dark:border-gray-800 sticky top-0 z-50 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           <Link to="/" className="flex items-center space-x-2 group">
@@ -20,7 +22,7 @@ export default function Navbar() {
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all border border-gray-100 dark:border-gray-700"
+              className="p-2 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all border border-gray-200 dark:border-gray-700 shadow-sm"
               aria-label="Toggle Theme"
             >
               {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
@@ -34,11 +36,11 @@ export default function Navbar() {
                   </div>
                   <span className="text-gray-700 dark:text-gray-300 text-sm font-medium pr-1">{user.name}</span>
                 </div>
-                <Link to="/dashboard" className="flex items-center space-x-1 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors">
+                <Link to="/dashboard" className="flex items-center space-x-1 text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors">
                   <LayoutDashboard className="h-4 w-4" />
                   <span>Dashboard</span>
                 </Link>
-                <Link to="/my-interviews" className="flex items-center space-x-1 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors">
+                <Link to="/my-interviews" className="flex items-center space-x-1 text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors">
                   <History className="h-4 w-4" />
                   <span>My Interviews</span>
                 </Link>
@@ -50,7 +52,7 @@ export default function Navbar() {
                 )}
                 <button
                   onClick={logout}
-                  className="flex items-center space-x-1 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors font-medium"
+                  className="flex items-center space-x-1 text-gray-700 dark:text-gray-200 hover:text-red-600 dark:hover:text-red-400 transition-colors font-medium"
                 >
                   <LogOut className="h-4 w-4" />
                   <span>Logout</span>
@@ -58,8 +60,8 @@ export default function Navbar() {
               </>
             ) : (
               <>
-                <Link to="/login" className="text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors">Log in</Link>
-                <Link to="/register" className="bg-indigo-600 text-white px-5 py-2 rounded-xl font-medium hover:bg-indigo-700 transition-all shadow-sm shadow-indigo-200 hover:shadow-indigo-300 transform hover:-translate-y-0.5">
+                <Link to="/login" className="text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors">Log in</Link>
+                <Link to="/register" className="bg-indigo-600 dark:bg-indigo-500 text-white px-5 py-2 rounded-xl font-bold hover:bg-indigo-700 dark:hover:bg-indigo-400 transition-all shadow-sm shadow-indigo-200 dark:shadow-indigo-900/50 transform hover:-translate-y-0.5 border border-indigo-700/20 dark:border-indigo-400/30">
                   Get Started
                 </Link>
               </>

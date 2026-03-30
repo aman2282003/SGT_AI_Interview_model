@@ -32,7 +32,7 @@ function App() {
     <Router>
       <ThemeProvider>
         <AuthProvider>
-          <div className="min-h-screen flex flex-col font-sans transition-colors duration-300">
+          <div className="min-h-screen flex flex-col font-sans transition-colors duration-300 bg-white dark:bg-gray-950 dark:text-gray-100">
             <Navbar />
             <main className="flex-1 w-full flex flex-col pt-16 mt-[-4rem]"> {/* Adjust for fixed navbar */}
               <Routes>

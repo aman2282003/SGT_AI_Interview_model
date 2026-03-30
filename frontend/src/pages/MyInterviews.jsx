@@ -42,7 +42,7 @@ export default function MyInterviews() {
           <Code2 className="w-16 h-16 text-gray-300 dark:text-gray-700 mx-auto mb-4" />
           <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 transition-colors duration-300">No interviews found</h3>
           <p className="text-gray-500 dark:text-gray-400 mb-6 transition-colors duration-300">You haven't completed any mock interviews yet.</p>
-          <Link to="/dashboard" className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-colors">Go to Dashboard</Link>
+          <Link to="/dashboard" className="px-6 py-3 bg-indigo-600 dark:bg-indigo-500 text-white rounded-xl font-bold hover:bg-indigo-700 dark:hover:bg-indigo-400 transition-colors border border-indigo-700/20 dark:border-indigo-400/30">Go to Dashboard</Link>
         </div>
       ) : (
         <div className="space-y-6">
@@ -109,7 +109,7 @@ export default function MyInterviews() {
                         </div>
                       </div>
                       
-                      <Link to={`/results/${session._id}`} className="inline-flex w-full items-center justify-center px-4 py-3 bg-white dark:bg-gray-800 border-2 border-indigo-100 dark:border-gray-700 rounded-xl text-indigo-600 dark:text-indigo-400 font-bold hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:border-indigo-300 dark:hover:border-indigo-500 transition-colors">
+                      <Link to={`/results/${session._id}`} className="inline-flex w-full items-center justify-center px-4 py-3 bg-white dark:bg-gray-800 border-2 border-indigo-100 dark:border-gray-700 rounded-xl text-indigo-600 dark:text-indigo-400 font-bold hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:border-indigo-300 dark:hover:border-indigo-500 transition-colors shadow-sm">
                         View Full Details Page
                       </Link>
                     </div>

@@ -106,7 +106,7 @@ export default function Dashboard() {
                 }
               }}
               disabled={!customTopic.trim()}
-              className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-md transition-all whitespace-nowrap"
+              className="px-6 py-3 bg-indigo-600 dark:bg-indigo-500 text-white rounded-xl font-bold hover:bg-indigo-700 dark:hover:bg-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed shadow-md transition-all whitespace-nowrap border border-indigo-700/20 dark:border-indigo-400/30"
             >
               Start Custom
             </button>

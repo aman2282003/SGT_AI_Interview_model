@@ -498,7 +498,7 @@ export default function InterviewRoom() {
                     </div>
                     <button 
                       onClick={!isScreenSharing ? startScreenShare : undefined}
-                      className={`p-5 rounded-2xl border-2 flex items-center justify-center gap-3 w-full transition-all ${isScreenSharing ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 shadow-sm cursor-default' : 'border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 hover:border-indigo-300 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-indigo-700 dark:hover:text-indigo-400 cursor-pointer shadow-sm hover:shadow-md transform hover:-translate-y-0.5'}`}
+                      className={`p-5 rounded-2xl border-2 flex items-center justify-center gap-3 w-full transition-all ${isScreenSharing ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 shadow-sm cursor-default' : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 hover:border-indigo-300 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-indigo-700 dark:hover:text-indigo-400 cursor-pointer shadow-sm hover:shadow-md transform hover:-translate-y-0.5 border border-gray-300 dark:border-gray-600'}`}
                     >
                       <MonitorUp className="w-6 h-6" />
                       <span className="font-bold text-lg">{isScreenSharing ? 'Screen Ready' : 'Click to Share Screen'}</span>
@@ -533,7 +533,7 @@ export default function InterviewRoom() {
                        </div>
                        
                        <div className="flex items-center gap-4">
-                         <button onClick={executeCode} disabled={isExecuting} className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold flex items-center justify-center hover:bg-indigo-700 shadow-md transition-all sm:w-auto w-full">
+                         <button onClick={executeCode} disabled={isExecuting} className="px-6 py-3 bg-indigo-600 dark:bg-indigo-500 text-white rounded-xl font-bold flex items-center justify-center hover:bg-indigo-700 dark:hover:bg-indigo-400 border border-indigo-700/20 dark:border-indigo-400/30 shadow-md transition-all sm:w-auto w-full">
                            {isExecuting ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <PlayCircle className="w-5 h-5 mr-2" />}
                            {isExecuting ? 'Running Analysis...' : 'Run Code & Tests'}
                          </button>
@@ -581,7 +581,7 @@ export default function InterviewRoom() {
                   <div className="grid grid-cols-2 gap-4 mt-8">
                     <button 
                         onClick={toggleRecording}
-                        className={`py-4 px-6 rounded-2xl font-bold flex items-center justify-center transition-all duration-300 ${isRecording ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 border-2 border-red-200 dark:border-red-900/30 shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)]' : 'bg-indigo-600 text-white hover:bg-indigo-700 border-2 border-indigo-600 shadow-xl shadow-indigo-200 dark:shadow-none transform hover:-translate-y-1'}`}
+                        className={`py-4 px-6 rounded-2xl font-bold flex items-center justify-center transition-all duration-300 border ${isRecording ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 border-red-200 dark:border-red-800/50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)]' : 'bg-indigo-600 dark:bg-indigo-500 text-white hover:bg-indigo-700 dark:hover:bg-indigo-400 border-indigo-700/20 dark:border-indigo-400/30 shadow-xl shadow-indigo-200 dark:shadow-indigo-900/20 transform hover:-translate-y-1'}`}
                       >
                       {isRecording ? <><StopCircle className="w-6 h-6 mr-2 animate-pulse" /> Stop Recording</> : <><PlayCircle className="w-6 h-6 mr-2" /> Start Recording</>}
                     </button>
@@ -597,7 +597,7 @@ export default function InterviewRoom() {
                       <button 
                         onClick={submitInterview}
                         disabled={isSubmitting}
-                        className="py-4 px-6 rounded-2xl font-bold text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-green-200 dark:shadow-none flex items-center justify-center transition-all transform hover:-translate-y-1"
+                        className="py-4 px-6 rounded-2xl font-bold text-white bg-green-600 dark:bg-green-500 hover:bg-green-700 dark:hover:bg-green-400 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-green-200 dark:shadow-green-900/20 flex items-center justify-center transition-all transform hover:-translate-y-1 border border-green-700/20 dark:border-green-400/30"
                       >
                         {isSubmitting ? <><Loader2 className="w-6 h-6 mr-2 animate-spin" /> Evaluating with AI...</> : 'Complete & Evaluate'}
                       </button>

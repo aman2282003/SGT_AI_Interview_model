@@ -25,10 +25,10 @@ export default function Home() {
               We don't just ask you to code. We simulate high-pressure verbal technical interviews across 11 different technology stacks. Share your screen, explain your thought process out loud, and get precise marks and detailed feedback instantly.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link to="/register" className="w-full sm:w-auto rounded-2xl bg-indigo-600 px-8 py-4 text-base font-bold text-white shadow-xl shadow-indigo-200 dark:shadow-none hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all flex items-center justify-center gap-2 transform hover:-translate-y-1">
+              <Link to="/register" className="w-full sm:w-auto rounded-2xl bg-indigo-600 dark:bg-indigo-500 px-8 py-4 text-base font-bold text-white shadow-xl shadow-indigo-200 dark:shadow-indigo-900/50 hover:bg-indigo-700 dark:hover:bg-indigo-400 transition-all flex items-center justify-center gap-2 transform hover:-translate-y-1 border border-indigo-700/20 dark:border-indigo-400/30">
                 Start Practicing for Free <ArrowRight className="h-5 w-5" />
               </Link>
-              <Link to="/login" className="w-full sm:w-auto rounded-2xl bg-white dark:bg-gray-800 px-8 py-4 text-base font-bold text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 flex items-center justify-center transition-all">
+              <Link to="/login" className="w-full sm:w-auto rounded-2xl bg-white dark:bg-gray-900 px-8 py-4 text-base font-bold text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center justify-center transition-all border border-gray-200 dark:border-gray-700">
                 Sign In
               </Link>
             </div>
@@ -153,7 +153,7 @@ export default function Home() {
               Join developers improving their verbal communication and technical depth by practicing in our simulated proctored environment.
             </p>
             <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10">
-              <Link to="/register" className="w-full sm:w-auto rounded-xl bg-white dark:bg-indigo-600 px-10 py-4 text-lg font-bold text-gray-900 dark:text-white shadow-xl hover:bg-gray-50 dark:hover:bg-indigo-700 transition-all transform hover:-translate-y-1">
+              <Link to="/register" className="w-full sm:w-auto rounded-xl bg-white dark:bg-indigo-600 px-10 py-4 text-lg font-bold text-gray-900 dark:text-white shadow-xl shadow-black/10 dark:shadow-indigo-900/40 hover:bg-gray-50 dark:hover:bg-indigo-700 transition-all transform hover:-translate-y-1 border border-gray-200 dark:border-indigo-400/40">
                 Create Your Free Account
               </Link>
             </div>
