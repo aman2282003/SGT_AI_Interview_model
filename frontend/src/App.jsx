@@ -15,14 +15,14 @@ import AdminSessions from './pages/AdminSessions';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useContext(AuthContext);
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (loading) return null; // Let AuthProvider handle the initial load state
   if (!user) return <Navigate to="/login" replace />;
   return children;
 };
 
 const ProtectedAdminRoute = ({ children }) => {
   const { user, loading } = useContext(AuthContext);
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (loading) return null; // Let AuthProvider handle the initial load state
   if (!user || !user.isAdmin) return <Navigate to="/dashboard" replace />;
   return children;
 };
@@ -34,7 +34,7 @@ function App() {
         <AuthProvider>
           <div className="min-h-screen flex flex-col font-sans transition-colors duration-300 bg-white dark:bg-gray-950 dark:text-gray-100">
             <Navbar />
-            <main className="flex-1 w-full flex flex-col pt-16 mt-[-4rem]"> {/* Adjust for fixed navbar */}
+            <main className="flex-1 w-full flex flex-col pt-16"> {/* Full height offset for fixed navbar */}
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
