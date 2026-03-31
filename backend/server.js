@@ -11,8 +11,8 @@ app.use(cors({
   origin: [process.env.FRONTEND_URL, "https://sgt-ai-interview-model.vercel.app"],
   credentials: true
 }));
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: '200mb' }));
+app.use(express.urlencoded({ extended: true, limit: '200mb' }));
 
 const path = require('path');
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

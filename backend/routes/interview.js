@@ -56,56 +56,87 @@ function getGroqClient() {
 }
 
 // Submit interview transcript
-router.post('/submit', auth, upload.fields([{ name: 'cameraVideo', maxCount: 1 }, { name: 'screenVideo', maxCount: 1 }]), async (req, res) => {
+router.post('/submit', auth, localUpload.fields([{ name: 'cameraVideo', maxCount: 1 }, { name: 'screenVideo', maxCount: 1 }]), async (req, res) => {
   try {
     const { techStack, transcript } = req.body;
 
+    // Use local file paths temporarily - we will replace these with Cloudinary URLs in the background
     let cameraVideoUrl = null;
     let screenVideoUrl = null;
 
-    console.log("Files received:", req.files);
-    console.log("Body received:", req.body);
-
-    if (req.files && req.files['cameraVideo'] && req.files['cameraVideo'][0].path) {
-      cameraVideoUrl = req.files['cameraVideo'][0].path;
-      console.log("Camera video URL set (Cloudinary):", cameraVideoUrl);
-    }
-    if (req.files && req.files['screenVideo'] && req.files['screenVideo'][0].path) {
-      screenVideoUrl = req.files['screenVideo'][0].path;
-      console.log("Screen video URL set (Cloudinary):", screenVideoUrl);
-    }
-
     if (!techStack || !transcript) {
+      // Cleanup local files if request is invalid
+      if (req.files) {
+        Object.values(req.files).forEach(fileArr => {
+          fileArr.forEach(f => { if (fs.existsSync(f.path)) fs.unlinkSync(f.path); });
+        });
+      }
       return res.status(400).json({ message: 'Tech stack and transcript are required' });
     }
 
-    console.log("==== INCOMING INTERVIEW SUBMISSION (ASYNC AI) ====");
+    console.log("==== INCOMING INTERVIEW SUBMISSION (OPTIMIZED) ====");
     
-    // 1. Create and Save the session immediately (without AI marks yet)
+    // 1. Create and Save the session immediately
     const session = new InterviewSession({
       user: req.user.id,
       techStack,
       transcript,
-      cameraVideoUrl,
-      screenVideoUrl,
-      aiMarks: null, // Still evaluating
-      aiFeedback: "AI is currently evaluating your interview answers. Please wait a moment..."
+      cameraVideoUrl: null, // Will be updated in background
+      screenVideoUrl: null, // Will be updated in background
+      aiMarks: null, 
+      aiFeedback: "AI is currently evaluating your interview answers and processing your recordings. Please wait a moment..."
     });
 
     await session.save();
 
-    // 2. Respond to the client immediately to prevent timeout
+    // 2. Respond to the client immediately (VERY FAST now because files are only moved to local disk)
     res.status(201).json(session);
 
-    // 3. Perform AI evaluation in the background
+    // 3. Perform Cloudinary upload and AI evaluation in the background
     const groq = getGroqClient();
-    if (!groq) {
-      console.error("AI configuration missing for background evaluation.");
-      return; 
-    }
-
+    
     (async () => {
       try {
+        let finalCameraUrl = null;
+        let finalScreenUrl = null;
+
+        // A. Upload to Cloudinary in background
+        if (req.files && req.files['cameraVideo']) {
+          const file = req.files['cameraVideo'][0];
+          console.log("Background: Uploading camera video to Cloudinary...");
+          const result = await cloudinary.uploader.upload(file.path, {
+            folder: 'ai-interviewer-recordings',
+            resource_type: 'video',
+            public_id: `${req.user.id}-${Date.now()}-camera`
+          });
+          finalCameraUrl = result.secure_url;
+          if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+        }
+
+        if (req.files && req.files['screenVideo']) {
+          const file = req.files['screenVideo'][0];
+          console.log("Background: Uploading screen video to Cloudinary...");
+          const result = await cloudinary.uploader.upload(file.path, {
+            folder: 'ai-interviewer-recordings',
+            resource_type: 'video',
+            public_id: `${req.user.id}-${Date.now()}-screen`
+          });
+          finalScreenUrl = result.secure_url;
+          if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+        }
+
+        // Update URLs in database
+        await InterviewSession.findByIdAndUpdate(session._id, {
+          cameraVideoUrl: finalCameraUrl,
+          screenVideoUrl: finalScreenUrl
+        });
+
+        // B. Perform AI evaluation
+        if (!groq) {
+          console.error("AI configuration missing for background evaluation.");
+          return; 
+        }
+
         console.log(`Starting background AI evaluation for session: ${session._id}`);
         const prompt = `You are a professional technical interviewer. The candidate took an interview for the following tech stack: ${techStack}.
 They were asked multiple questions. Here is the transcript of the interview questions and their recorded answers:
@@ -137,11 +168,17 @@ You MUST respond with ONLY valid JSON. No extra text, no markdown, no code block
           aiMarks: evaluation.marks,
           aiFeedback: evaluation.feedback
         });
-        console.log(`Background AI evaluation complete for session: ${session._id}`);
-      } catch (aiErr) {
-        console.error(`Background AI error for session ${session._id}:`, aiErr.message);
+        console.log(`Background tasks complete for session: ${session._id}`);
+      } catch (bgErr) {
+        console.error(`Background error for session ${session._id}:`, bgErr.message);
+        // Ensure cleanup even on error
+        if (req.files) {
+          Object.values(req.files).forEach(fileArr => {
+            fileArr.forEach(f => { if (fs.existsSync(f.path)) fs.unlinkSync(f.path); });
+          });
+        }
         await InterviewSession.findByIdAndUpdate(session._id, {
-          aiFeedback: "Evaluation failed: " + (aiErr.message || "Unknown error")
+          aiFeedback: "Processing/Evaluation failed: " + (bgErr.message || "Unknown error")
         });
       }
     })();

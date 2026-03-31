@@ -20,6 +20,7 @@ export default function InterviewRoom() {
   const [hasCamera, setHasCamera] = useState(false);
   const [isCameraRequested, setIsCameraRequested] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [isInterviewStarted, setIsInterviewStarted] = useState(false);
   const [didActuallyStart, setDidActuallyStart] = useState(false);
   
@@ -427,8 +428,10 @@ export default function InterviewRoom() {
       const res = await axios.post(`${import.meta.env.VITE_HOST}/api/interview/submit`, formData, {
         headers: { 
           Authorization: `Bearer ${token}`
-          // REMOVED: 'Content-Type': 'multipart/form-data' 
-          // Axios sets the correct boundary automatically when passing FormData
+        },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadProgress(percentCompleted);
         }
       });
       localStorage.removeItem('interview_progress');
@@ -599,7 +602,11 @@ export default function InterviewRoom() {
                         disabled={isSubmitting}
                         className="py-4 px-6 rounded-2xl font-bold text-white bg-green-600 dark:bg-green-500 hover:bg-green-700 dark:hover:bg-green-400 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-green-200 dark:shadow-green-900/20 flex items-center justify-center transition-all transform hover:-translate-y-1 border border-green-700/20 dark:border-green-400/30"
                       >
-                        {isSubmitting ? <><Loader2 className="w-6 h-6 mr-2 animate-spin" /> Evaluating with AI...</> : 'Complete & Evaluate'}
+                        {isSubmitting ? (
+                          <><Loader2 className="w-6 h-6 mr-2 animate-spin" /> {uploadProgress < 100 ? `Uploading: ${uploadProgress}%` : 'Finishing Submission...'}</>
+                        ) : (
+                          'Complete & Evaluate'
+                        )}
                       </button>
                     )}
                   </div>
@@ -614,6 +621,7 @@ export default function InterviewRoom() {
             {isCameraRequested ? (
               <Webcam 
                 audio={true} 
+                muted={true}
                 className="w-full h-full object-cover" 
                 mirrored={true} 
                 onUserMedia={handleUserMedia}
