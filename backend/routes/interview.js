@@ -283,47 +283,71 @@ router.post('/generate-questions', auth, async (req, res) => {
       return res.status(500).json({ message: 'AI configuration is missing. Add your GROQ_API_KEY in backend/.env and restart the server.' });
     }
 
-    const prompt = `You are an expert interviewer. The candidate has chosen the following custom topic for their interview: "${topic}".
-Generate exactly 5 interview questions related to this topic.
-You MUST respond with ONLY a valid JSON array of strings. No extra text, no markdown, no code blocks:
-["Question 1?", "Question 2?", "Question 3?", "Question 4?", "Question 5?"]`;
+    // [STRENGTHENED PROMPT]
+    const prompt = `You are a professional technical interviewer. The candidate has chosen the following custom topic for their interview practice: "${topic}".
+Generate exactly 5 focused interview questions related to this topic.
+You MUST respond with a valid JSON array of 5 strings.
+Example: ["Question 1", "Question 2", "Question 3", "Question 4", "Question 5"]
+DO NOT include any markdown code blocks, prefixes, or suffixes. Just the raw JSON.`;
 
     try {
       const completion = await groq.chat.completions.create({
         model: 'llama-3.3-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.6,
-        max_tokens: 512,
+        max_tokens: 1024,
       });
 
       let responseText = completion.choices[0]?.message?.content?.trim() || '';
+      console.log("Raw AI Response for Questions:", responseText);
 
-      // Strip markdown code fences
-      responseText = responseText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
-
-      // Extract JSON array if there is surrounding text
-      const jsonMatch = responseText.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        responseText = jsonMatch[0];
+      // [ROBUST EXTRACTION]
+      let questionsRaw = [];
+      try {
+        // Try to find the JSON array part specifically
+        const startIndex = responseText.indexOf('[');
+        const endIndex = responseText.lastIndexOf(']');
+        
+        if (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
+            const jsonSubstring = responseText.slice(startIndex, endIndex + 1);
+            questionsRaw = JSON.parse(jsonSubstring);
+        } else {
+            // Fallback: try to clean markdown blocks if the array wasn't found simply
+            const cleaned = responseText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+            questionsRaw = JSON.parse(cleaned);
+        }
+      } catch (parseError) {
+          console.warn("AI Question Parsing Failed. Falling back to Fail-safe questions.", parseError.message);
+          // [FAIL-SAFE DEFAULT QUESTIONS]
+          questionsRaw = [
+            `What are the most fundamental concepts one must master in ${topic}?`,
+            `Could you explain a real-world scenario where ${topic} is critical to success?`,
+            `What are the most common mistakes beginners make when working with ${topic}?`,
+            `In terms of performance and scalability, what are the best practices for ${topic}?`,
+            `How do you stay current with the rapidly evolving ecosystem of ${topic}?`
+          ];
       }
 
-      const parsedQuestions = JSON.parse(responseText);
+      // Final validation to ensure it's an array of strings
+      if (!Array.isArray(questionsRaw)) {
+        throw new Error("Parsed response is not an array");
+      }
 
-      // Format to match the expected frontend structure
-      const formattedQuestions = parsedQuestions.map(q => ({
+      // Limit to 5 and format for frontend
+      const formattedQuestions = questionsRaw.slice(0, 5).map(q => ({
         type: 'text',
-        prompt: q
+        prompt: typeof q === 'string' ? q : JSON.stringify(q)
       }));
 
       res.json({ questions: formattedQuestions });
 
     } catch (aiErr) {
       console.error('Groq API Error in generating questions:', aiErr.message || aiErr);
-      return res.status(500).json({ message: 'Failed to generate questions via AI. Error: ' + (aiErr.message || 'Unknown') });
+      return res.status(500).json({ message: 'Failed to communicate with AI. Error: ' + (aiErr.message || 'Unknown') });
     }
 
   } catch (err) {
-    console.error(err.message);
+    console.error("Server Error in Question Gen:", err.message);
     res.status(500).send('Server Error');
   }
 });

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Webcam from 'react-webcam';
 import axios from 'axios';
-import { Mic, MonitorUp, StopCircle, PlayCircle, Loader2, ChevronRight, Video, AlertTriangle } from 'lucide-react';
+import { Mic, MonitorUp, StopCircle, PlayCircle, Loader2, ChevronRight, Video, AlertTriangle, Code2 } from 'lucide-react';
 import { interviewQuestions } from '../data/questions';
 import Editor from '@monaco-editor/react';
 

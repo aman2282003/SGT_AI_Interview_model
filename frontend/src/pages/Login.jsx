@@ -1,7 +1,4 @@
-import React, { useState, useContext } from 'react';
-import { AuthContext } from '../context/AuthContext';
-import { Link } from 'react-router-dom';
-import { LogIn, Mail, Lock } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function Login() {
   const { login } = useContext(AuthContext);
@@ -21,7 +18,13 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:bg-none dark:bg-transparent flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300 relative overflow-hidden">
+    <motion.div 
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      transition={{ duration: 0.4 }}
+      className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:bg-none dark:bg-transparent flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300 relative overflow-hidden"
+    >
       {/* Dynamic Background Accents */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-500/10 dark:bg-indigo-400/20 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-500/10 dark:bg-purple-400/20 rounded-full blur-[120px] pointer-events-none"></div>
@@ -73,6 +76,6 @@ export default function Login() {
           </button>
         </form>
       </div>
-    </div>
+    </motion.div>
   );
 }

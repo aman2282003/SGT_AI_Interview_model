@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { motion } from 'framer-motion';
 import { Calendar, Code2, Video, MonitorUp, Award, ChevronDown, ChevronUp, MessageSquare, History, PlayCircle } from 'lucide-react';
 
 export default function MyInterviews() {
@@ -28,7 +29,13 @@ export default function MyInterviews() {
   if (loading) return <div className="min-h-[calc(100vh-4rem)] flex justify-center items-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8 transition-colors duration-300">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.5 }}
+      className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8 transition-colors duration-300"
+    >
       <div>
         <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight flex items-center gap-3 transition-colors duration-300">
           <History className="w-10 h-10 text-indigo-600 dark:text-indigo-400" />
@@ -164,6 +171,6 @@ export default function MyInterviews() {
           })}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

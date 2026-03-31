@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { useContext } from 'react';
@@ -27,46 +28,55 @@ const ProtectedAdminRoute = ({ children }) => {
   return children;
 };
 
+function AppContent() {
+  const location = useLocation();
+  return (
+    <div className="min-h-screen flex flex-col font-sans transition-colors duration-300 bg-white dark:bg-gray-950 dark:text-gray-100">
+      <Navbar />
+      <main className="flex-1 w-full flex flex-col pt-16 overflow-x-hidden">
+        <AnimatePresence mode="wait">
+          <Routes location={location} key={location.pathname}>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/my-interviews" element={
+              <ProtectedRoute>
+                <MyInterviews />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/sessions" element={
+              <ProtectedAdminRoute>
+                <AdminSessions />
+              </ProtectedAdminRoute>
+            } />
+            <Route path="/interview/:tech" element={
+              <ProtectedRoute>
+                <InterviewRoom />
+              </ProtectedRoute>
+            } />
+            <Route path="/results/:id" element={
+              <ProtectedRoute>
+                <Results />
+              </ProtectedRoute>
+            } />
+          </Routes>
+        </AnimatePresence>
+      </main>
+    </div>
+  );
+}
+
 function App() {
   return (
     <Router>
       <ThemeProvider>
         <AuthProvider>
-          <div className="min-h-screen flex flex-col font-sans transition-colors duration-300 bg-white dark:bg-gray-950 dark:text-gray-100">
-            <Navbar />
-            <main className="flex-1 w-full flex flex-col pt-16"> {/* Full height offset for fixed navbar */}
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/dashboard" element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                } />
-                <Route path="/my-interviews" element={
-                  <ProtectedRoute>
-                    <MyInterviews />
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/sessions" element={
-                  <ProtectedAdminRoute>
-                    <AdminSessions />
-                  </ProtectedAdminRoute>
-                } />
-                <Route path="/interview/:tech" element={
-                  <ProtectedRoute>
-                    <InterviewRoom />
-                  </ProtectedRoute>
-                } />
-                <Route path="/results/:id" element={
-                  <ProtectedRoute>
-                    <Results />
-                  </ProtectedRoute>
-                } />
-              </Routes>
-            </main>
-          </div>
+          <AppContent />
         </AuthProvider>
       </ThemeProvider>
     </Router>

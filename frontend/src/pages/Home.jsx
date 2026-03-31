@@ -1,10 +1,14 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { BrainCircuit, Play, CheckCircle2, ShieldCheck, Video, MessageSquare, Code2, Zap, ArrowRight, Star, Cpu, Lock, Server, Database } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function Home() {
   return (
-    <div className="bg-white dark:bg-transparent transition-colors duration-300">
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.5 }}
+      className="bg-white dark:bg-transparent transition-colors duration-300"
+    >
       {/* Hero Section */}
       <div className="relative isolate overflow-hidden">
         <div className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80" aria-hidden="true">
@@ -160,6 +164,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
