@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 import { Calendar, Code2, Video, MonitorUp, Award, ChevronDown, ChevronUp, MessageSquare, History, PlayCircle } from 'lucide-react';
+import { API_BASE } from '../config/api';
 
 export default function MyInterviews() {
   const [sessions, setSessions] = useState([]);
@@ -13,7 +14,7 @@ export default function MyInterviews() {
     const fetchHistory = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get(`${import.meta.env.VITE_HOST}/api/interview/history`, {
+        const res = await axios.get(`${API_BASE}/api/interview/history`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setSessions(res.data);
@@ -140,7 +141,7 @@ export default function MyInterviews() {
                           </div>
                           <video controls playsInline className="w-full h-auto max-h-[250px] object-cover">
                             <source 
-                              src={session.screenVideoUrl.startsWith('http') ? session.screenVideoUrl : `${import.meta.env.VITE_HOST}${session.screenVideoUrl}`} 
+                              src={session.screenVideoUrl.startsWith('http') ? session.screenVideoUrl : `${API_BASE}${session.screenVideoUrl}`} 
                               type="video/webm" 
                             />
                             Your browser does not support the video tag.
@@ -155,7 +156,7 @@ export default function MyInterviews() {
                           </div>
                           <video controls playsInline className="w-full h-auto max-h-[250px] object-cover">
                             <source 
-                              src={session.cameraVideoUrl.startsWith('http') ? session.cameraVideoUrl : `${import.meta.env.VITE_HOST}${session.cameraVideoUrl}`} 
+                              src={session.cameraVideoUrl.startsWith('http') ? session.cameraVideoUrl : `${API_BASE}${session.cameraVideoUrl}`} 
                               type="video/webm" 
                             />
                             Your browser does not support the video tag.

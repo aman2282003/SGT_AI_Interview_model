@@ -290,6 +290,15 @@ You MUST respond with a valid JSON array of 5 strings.
 Example: ["Question 1", "Question 2", "Question 3", "Question 4", "Question 5"]
 DO NOT include any markdown code blocks, prefixes, or suffixes. Just the raw JSON.`;
 
+    // [FAIL-SAFE DEFAULT QUESTIONS]
+    const failSafeQuestions = [
+      `What are the most fundamental concepts one must master in ${topic}?`,
+      `Could you explain a real-world scenario where ${topic} is critical to success?`,
+      `What are the most common mistakes beginners make when working with ${topic}?`,
+      `In terms of performance and scalability, what are the best practices for ${topic}?`,
+      `How do you stay current with the rapidly evolving ecosystem of ${topic}?`
+    ];
+
     try {
       const completion = await groq.chat.completions.create({
         model: 'llama-3.3-70b-versatile',
@@ -304,37 +313,21 @@ DO NOT include any markdown code blocks, prefixes, or suffixes. Just the raw JSO
       // [ROBUST EXTRACTION]
       let questionsRaw = [];
       try {
-        // Try to find the JSON array part specifically
         const startIndex = responseText.indexOf('[');
         const endIndex = responseText.lastIndexOf(']');
-        
         if (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
             const jsonSubstring = responseText.slice(startIndex, endIndex + 1);
             questionsRaw = JSON.parse(jsonSubstring);
         } else {
-            // Fallback: try to clean markdown blocks if the array wasn't found simply
             const cleaned = responseText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
             questionsRaw = JSON.parse(cleaned);
         }
       } catch (parseError) {
-          console.warn("AI Question Parsing Failed. Falling back to Fail-safe questions.", parseError.message);
-          // [FAIL-SAFE DEFAULT QUESTIONS]
-          questionsRaw = [
-            `What are the most fundamental concepts one must master in ${topic}?`,
-            `Could you explain a real-world scenario where ${topic} is critical to success?`,
-            `What are the most common mistakes beginners make when working with ${topic}?`,
-            `In terms of performance and scalability, what are the best practices for ${topic}?`,
-            `How do you stay current with the rapidly evolving ecosystem of ${topic}?`
-          ];
+          console.warn("AI Question Parsing Failed. Using fail-safe.", parseError.message);
+          questionsRaw = failSafeQuestions;
       }
 
-      // Final validation to ensure it's an array of strings
-      if (!Array.isArray(questionsRaw)) {
-        throw new Error("Parsed response is not an array");
-      }
-
-      // Limit to 5 and format for frontend
-      const formattedQuestions = questionsRaw.slice(0, 5).map(q => ({
+      const formattedQuestions = (Array.isArray(questionsRaw) ? questionsRaw : failSafeQuestions).slice(0, 5).map(q => ({
         type: 'text',
         prompt: typeof q === 'string' ? q : JSON.stringify(q)
       }));
@@ -342,8 +335,10 @@ DO NOT include any markdown code blocks, prefixes, or suffixes. Just the raw JSO
       res.json({ questions: formattedQuestions });
 
     } catch (aiErr) {
-      console.error('Groq API Error in generating questions:', aiErr.message || aiErr);
-      return res.status(500).json({ message: 'Failed to communicate with AI. Error: ' + (aiErr.message || 'Unknown') });
+      console.error('Groq API Error, falling back to fail-safe:', aiErr.message || aiErr);
+      // Even if the API call fails COMPLETELY, we send back-up questions to avoid a frontend crash
+      const formattedQuestions = failSafeQuestions.map(q => ({ type: 'text', prompt: q }));
+      res.json({ questions: formattedQuestions, note: "AI Service temporarily unavailable, using fallback questions." });
     }
 
   } catch (err) {

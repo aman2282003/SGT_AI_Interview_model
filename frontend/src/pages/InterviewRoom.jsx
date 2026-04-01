@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Webcam from 'react-webcam';
 import axios from 'axios';
 import { API_BASE } from '../config/api';
-import { Mic, MonitorUp, StopCircle, PlayCircle, Loader2, ChevronRight, Video, AlertTriangle, Code2 } from 'lucide-react';
+import { Mic, MonitorUp, StopCircle, PlayCircle, Loader2, ChevronRight, ChevronLeft, Video, AlertTriangle, Code2 } from 'lucide-react';
 import { interviewQuestions } from '../data/questions';
 import Editor from '@monaco-editor/react';
 
@@ -13,7 +13,7 @@ export default function InterviewRoom() {
   
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState([]);
+  const [answers, setAnswers] = useState(new Array(5).fill(null));
   const [currentAnswer, setCurrentAnswer] = useState('');
   const [interimAnswer, setInterimAnswer] = useState('');
   const [isRecording, setIsRecording] = useState(false);
@@ -81,7 +81,7 @@ export default function InterviewRoom() {
         const shuffled = [...allQs].sort(() => 0.5 - Math.random());
         const selected = shuffled.slice(0, 5);
         setQuestions(selected);
-        setAnswers(new Array(5).fill(''));
+        setAnswers(new Array(5).fill(null));
       } else {
         // Custom topic
         try {
@@ -90,14 +90,17 @@ export default function InterviewRoom() {
             headers: { Authorization: `Bearer ${token}` }
           });
           setQuestions(res.data.questions);
-          setAnswers(new Array(5).fill(''));
+          setAnswers(new Array(5).fill(null));
         } catch (err) {
           console.error("Failed to generate custom questions", err);
-          alert("Failed to generate custom interview questions. Falling back to default questions.");
-          const allQs = interviewQuestions['system_design'];
+          const errorMessage = err.response?.data?.message || err.message || "Unknown error";
+          alert(`Could not generate AI questions for "${tech}": ${errorMessage}\n\nFalling back to default Interview topics.`);
+          
+          const fallbackStack = interviewQuestions[tech.toLowerCase()] ? tech.toLowerCase() : 'system_design';
+          const allQs = interviewQuestions[fallbackStack];
           const shuffled = [...allQs].sort(() => 0.5 - Math.random());
           setQuestions(shuffled.slice(0, 5));
-          setAnswers(new Array(5).fill(''));
+          setAnswers(new Array(5).fill(null));
         }
       }
     };
@@ -340,28 +343,61 @@ export default function InterviewRoom() {
     setIsExecuting(false);
   };
 
-  const handleNextQuestion = () => {
-    const currentQ = questions[currentIndex];
+  // Helper to save current progress before navigating
+  const saveCurrentProgress = (index) => {
+    const currentQ = questions[index];
+    if (!currentQ) return;
+    
     const questionText = typeof currentQ === 'string' ? currentQ : currentQ.prompt;
-    // Capture BOTH final and interim text so nothing is lost when clicking next
-    const combinedAnswer = (currentAnswer + ' ' + interimAnswer).trim();
-    const finalAnswerText = typeof currentQ === 'object' && currentQ.type === 'coding' 
-        ? `[Code Submitted]\n${codeContent}\n\n[Spoken Transcript]\n${combinedAnswer}`
-        : combinedAnswer;
+    const combinedText = (currentAnswer + ' ' + interimAnswer).trim();
+    
+    let finalAnswerText = combinedText;
+    if (typeof currentQ === 'object' && currentQ.type === 'coding') {
+      finalAnswerText = `[Code Submitted]\n${codeContent}\n\n[Spoken Transcript]\n${combinedText}`;
+    }
 
     const newAnswers = [...answers];
-    newAnswers[currentIndex] = {
+    newAnswers[index] = {
       question: questionText,
-      answer: finalAnswerText || 'No answer provided.'
+      answer: finalAnswerText || 'No answer provided.',
+      rawText: currentAnswer, // Preserve for navigation restoration
+      rawCode: codeContent    // Preserve for navigation restoration
     };
     setAnswers(newAnswers);
+  };
+
+  const handleNextQuestion = () => {
+    saveCurrentProgress(currentIndex);
     
-    setCurrentAnswer('');
+    const nextIndex = currentIndex + 1;
+    if (nextIndex < questions.length) {
+      const saved = answers[nextIndex];
+      setCurrentAnswer(saved?.rawText || '');
+      setInterimAnswer('');
+      // If next question is coding, reset codeContent from saved or default
+      const nextQ = questions[nextIndex];
+      if (nextQ && typeof nextQ === 'object' && nextQ.type === 'coding') {
+         setCodeContent(saved?.rawCode || nextQ.initialCode || '');
+      } else {
+         setCodeContent('');
+      }
+      setCurrentIndex(nextIndex);
+    }
+  };
+
+  const handlePreviousQuestion = () => {
+    if (currentIndex === 0) return;
+    
+    saveCurrentProgress(currentIndex);
+    
+    const prevIndex = currentIndex - 1;
+    const saved = answers[prevIndex];
+    
+    // Restore saved data
+    setCurrentAnswer(saved?.rawText || '');
     setInterimAnswer('');
-    
-    // DO NOT stop recording when moving to the next question!
-    // Maintain a gapless stream of audio transcription!
-    setCurrentIndex(prev => prev + 1);
+    setCodeContent(saved?.rawCode || ''); // Restore saved code
+    setCurrentIndex(prevIndex);
   };
 
   const submitInterview = async () => {
@@ -582,7 +618,7 @@ export default function InterviewRoom() {
                     </>
                   )}
                   
-                  <div className="grid grid-cols-2 gap-4 mt-8">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
                     <button 
                         onClick={toggleRecording}
                         className={`py-4 px-6 rounded-2xl font-bold flex items-center justify-center transition-all duration-300 border ${isRecording ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 border-red-200 dark:border-red-800/50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)]' : 'bg-indigo-600 dark:bg-indigo-500 text-white hover:bg-indigo-700 dark:hover:bg-indigo-400 border-indigo-700/20 dark:border-indigo-400/30 shadow-xl shadow-indigo-200 dark:shadow-indigo-900/20 transform hover:-translate-y-1'}`}
@@ -590,26 +626,37 @@ export default function InterviewRoom() {
                       {isRecording ? <><StopCircle className="w-6 h-6 mr-2 animate-pulse" /> Stop Recording</> : <><PlayCircle className="w-6 h-6 mr-2" /> Start Recording</>}
                     </button>
                     
-                    {currentIndex < questions.length - 1 ? (
-                      <button 
-                        onClick={handleNextQuestion}
-                        className="py-4 px-6 rounded-2xl font-bold text-gray-700 dark:text-white bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600 flex items-center justify-center transition-all shadow-sm"
-                      >
-                        Next <ChevronRight className="w-5 h-5 ml-1" />
-                      </button>
-                    ) : (
-                      <button 
-                        onClick={submitInterview}
-                        disabled={isSubmitting}
-                        className="py-4 px-6 rounded-2xl font-bold text-white bg-green-600 dark:bg-green-500 hover:bg-green-700 dark:hover:bg-green-400 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-green-200 dark:shadow-green-900/20 flex items-center justify-center transition-all transform hover:-translate-y-1 border border-green-700/20 dark:border-green-400/30"
-                      >
-                        {isSubmitting ? (
-                          <><Loader2 className="w-6 h-6 mr-2 animate-spin" /> {uploadProgress < 100 ? `Uploading: ${uploadProgress}%` : 'Finishing Submission...'}</>
-                        ) : (
-                          'Complete & Evaluate'
-                        )}
-                      </button>
-                    )}
+                    <div className="flex gap-4">
+                      {currentIndex > 0 && (
+                        <button 
+                          onClick={handlePreviousQuestion}
+                          className="flex-1 py-4 px-6 rounded-2xl font-bold text-gray-700 dark:text-white bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600 flex items-center justify-center transition-all shadow-sm"
+                        >
+                          <ChevronLeft className="w-5 h-5 mr-1" /> Prev
+                        </button>
+                      )}
+
+                      {currentIndex < questions.length - 1 ? (
+                        <button 
+                          onClick={handleNextQuestion}
+                          className="flex-1 py-4 px-6 rounded-2xl font-bold text-gray-700 dark:text-white bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600 flex items-center justify-center transition-all shadow-sm"
+                        >
+                          Next <ChevronRight className="w-5 h-5 ml-1" />
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={submitInterview}
+                          disabled={isSubmitting}
+                          className="flex-1 py-4 px-6 rounded-2xl font-bold text-white bg-green-600 dark:bg-green-500 hover:bg-green-700 dark:hover:bg-green-400 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-green-200 dark:shadow-green-900/20 flex items-center justify-center transition-all transform hover:-translate-y-1 border border-green-700/20 dark:border-green-400/30"
+                        >
+                          {isSubmitting ? (
+                            <><Loader2 className="w-6 h-6 mr-2 animate-spin" /> {uploadProgress < 100 ? `Uploading: ${uploadProgress}%` : 'Finalizing...'}</>
+                          ) : (
+                            'Submit'
+                          )}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </>
              )}
