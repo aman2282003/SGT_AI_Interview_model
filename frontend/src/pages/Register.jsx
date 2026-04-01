@@ -1,4 +1,8 @@
+import React, { useState, useContext } from 'react';
+import { Link } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
 import { motion } from 'framer-motion';
+import { UserPlus, Mail, Lock, User } from 'lucide-react';
 
 export default function Register() {
   const { register } = useContext(AuthContext);

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Code2, Server, Database, Smartphone, Palette, ChevronRight, Terminal, Network, ShieldCheck, CupSoda, MonitorCog, TrendingUp, Target, BrainCircuit, Video } from 'lucide-react';
 import axios from 'axios';
+import { API_BASE } from '../config/api';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -28,7 +29,7 @@ export default function Dashboard() {
     const fetchHistory = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get(`${import.meta.env.VITE_HOST}/api/interview/history`, {
+        const res = await axios.get(`${API_BASE}/api/interview/history`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setHistory(res.data);

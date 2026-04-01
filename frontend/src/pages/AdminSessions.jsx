@@ -1,4 +1,8 @@
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import axios from 'axios';
+import { Users, Search, History, Calendar, Award, MessageSquare, MonitorUp, Video, PlayCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { API_BASE } from '../config/api';
 
 export default function AdminSessions() {
   const [sessions, setSessions] = useState([]);
@@ -10,7 +14,7 @@ export default function AdminSessions() {
     const fetchAllSessions = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get(`${import.meta.env.VITE_HOST}/api/interview/admin/all`, {
+        const res = await axios.get(`${API_BASE}/api/interview/admin/all`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setSessions(res.data);
@@ -156,7 +160,7 @@ export default function AdminSessions() {
                             <MonitorUp className="w-3 h-3 mr-1.5" /> Screen Capture
                           </div>
                           <video controls playsInline className="w-full h-auto max-h-[250px] object-cover">
-                            <source src={`${import.meta.env.VITE_HOST}${session.screenVideoUrl}`} type="video/webm" />
+                            <source src={`${API_BASE}${session.screenVideoUrl}`} type="video/webm" />
                             Your browser does not support the video tag.
                           </video>
                         </div>
@@ -168,7 +172,7 @@ export default function AdminSessions() {
                             <Video className="w-3 h-3 mr-1.5" /> Camera
                           </div>
                           <video controls playsInline className="w-full h-auto max-h-[250px] object-cover">
-                            <source src={`${import.meta.env.VITE_HOST}${session.cameraVideoUrl}`} type="video/webm" />
+                            <source src={`${API_BASE}${session.cameraVideoUrl}`} type="video/webm" />
                             Your browser does not support the video tag.
                           </video>
                         </div>

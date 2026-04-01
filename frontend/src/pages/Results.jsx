@@ -4,6 +4,7 @@ import axios from 'axios';
 import { Award, AlertCircle, ChevronLeft, Calendar, Code2, MessageSquare, Video, MonitorUp, Sparkles, CheckCircle2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
+import { API_BASE } from '../config/api';
 
 export default function Results() {
   const { id } = useParams();
@@ -18,7 +19,7 @@ export default function Results() {
     const fetchSession = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get(`${import.meta.env.VITE_HOST}/api/interview/${id}`, {
+        const res = await axios.get(`${API_BASE}/api/interview/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setSession(res.data);
@@ -150,7 +151,7 @@ export default function Results() {
                     <Sparkles className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white transition-colors duration-300">AI Interview Specialist is Assessment...</h3>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white transition-colors duration-300">AI Interview Specialist is assessing...</h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400 font-medium transition-colors duration-300">This usually takes 10-15 seconds. Please stay on this page.</p>
                   </div>
                 </div>
@@ -210,7 +211,7 @@ export default function Results() {
                               <MonitorUp className="w-4 h-4 mr-2" /> Screen Capture
                             </div>
                             <video controls playsInline className="w-full h-auto max-h-[400px]">
-                              <source src={session.screenVideoUrl.startsWith('http') ? session.screenVideoUrl : `${import.meta.env.VITE_HOST}${session.screenVideoUrl}`} type="video/webm" />
+                              <source src={session.screenVideoUrl.startsWith('http') ? session.screenVideoUrl : `${API_BASE}${session.screenVideoUrl}`} type="video/webm" />
                               Your browser does not support the video tag.
                             </video>
                           </div>
@@ -221,7 +222,7 @@ export default function Results() {
                               <Video className="w-4 h-4 mr-2" /> Personal Camera
                             </div>
                             <video controls playsInline className="w-full h-auto max-h-[300px]">
-                              <source src={session.cameraVideoUrl.startsWith('http') ? session.cameraVideoUrl : `${import.meta.env.VITE_HOST}${session.cameraVideoUrl}`} type="video/webm" />
+                              <source src={session.cameraVideoUrl.startsWith('http') ? session.cameraVideoUrl : `${API_BASE}${session.cameraVideoUrl}`} type="video/webm" />
                               Your browser does not support the video tag.
                             </video>
                           </div>

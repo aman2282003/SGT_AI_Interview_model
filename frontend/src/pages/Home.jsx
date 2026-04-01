@@ -1,4 +1,7 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { BrainCircuit, Play, CheckCircle2, ShieldCheck, Video, MessageSquare, Code2, Zap, ArrowRight, Star, Cpu, Lock, Server, Database } from 'lucide-react';
 
 export default function Home() {
   return (

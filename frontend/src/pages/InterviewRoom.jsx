@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Webcam from 'react-webcam';
 import axios from 'axios';
+import { API_BASE } from '../config/api';
 import { Mic, MonitorUp, StopCircle, PlayCircle, Loader2, ChevronRight, Video, AlertTriangle, Code2 } from 'lucide-react';
 import { interviewQuestions } from '../data/questions';
 import Editor from '@monaco-editor/react';
@@ -85,7 +86,7 @@ export default function InterviewRoom() {
         // Custom topic
         try {
           const token = localStorage.getItem('token');
-          const res = await axios.post(`${import.meta.env.VITE_HOST}/api/interview/generate-questions`, { topic: tech }, {
+          const res = await axios.post(`${API_BASE}/api/interview/generate-questions`, { topic: tech }, {
             headers: { Authorization: `Bearer ${token}` }
           });
           setQuestions(res.data.questions);
@@ -167,7 +168,7 @@ export default function InterviewRoom() {
               const ext = (recorder.mimeType || '').includes('mp4') ? 'm4a' : 'webm';
               formData.append('audio', blob, 'chunk.' + ext);
               try {
-                const res = await axios.post(`${import.meta.env.VITE_HOST}/api/interview/transcribe`, formData, {
+                const res = await axios.post(`${API_BASE}/api/interview/transcribe`, formData, {
                    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
                 });
                 if (res.data && res.data.text) {
@@ -327,7 +328,7 @@ export default function InterviewRoom() {
     setIsExecuting(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.post(`${import.meta.env.VITE_HOST}/api/execute/run`, {
+      const res = await axios.post(`${API_BASE}/api/execute/run`, {
         language: currentQ.language,
         code: codeContent,
         testCases: currentQ.testCases
@@ -425,7 +426,7 @@ export default function InterviewRoom() {
       if (screenBlob.size > 0) formData.append('screenVideo', screenBlob, 'screen.webm');
 
       const token = localStorage.getItem('token');
-      const res = await axios.post(`${import.meta.env.VITE_HOST}/api/interview/submit`, formData, {
+      const res = await axios.post(`${API_BASE}/api/interview/submit`, formData, {
         headers: { 
           Authorization: `Bearer ${token}`
         },
