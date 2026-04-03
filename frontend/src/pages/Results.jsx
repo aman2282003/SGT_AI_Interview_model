@@ -101,18 +101,18 @@ export default function Results() {
         <div className={`absolute top-0 left-0 w-full h-4 ${session.aiMarks >= 80 ? 'bg-gradient-to-r from-green-400 to-emerald-600' : session.aiMarks >= 50 ? 'bg-gradient-to-r from-amber-400 to-orange-500' : 'bg-gradient-to-r from-red-500 to-rose-600'}`}></div>
         
         <div className="p-8 md:p-14">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 pb-10 border-b border-gray-100 dark:border-gray-800 gap-8">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-10 pb-10 border-b border-gray-100 dark:border-gray-800 gap-8">
             <div>
-              <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight flex items-center gap-4 transition-colors duration-300">
-                <Code2 className="w-10 h-10 text-indigo-600 dark:text-indigo-400" />
+              <h1 className="text-2xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight flex items-center gap-3 sm:gap-4 transition-colors duration-300">
+                <Code2 className="w-8 h-8 sm:w-10 sm:h-10 text-indigo-600 dark:text-indigo-400" />
                 {session.techStack} Assessment
               </h1>
-              <div className="mt-4 flex items-center space-x-4 text-gray-500 dark:text-gray-400 font-bold tracking-wide transition-colors duration-300">
-                <span className="flex items-center"><Calendar className="w-5 h-5 mr-2 text-gray-400 dark:text-gray-500" /> {new Date(session.createdAt).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} at {new Date(session.createdAt).toLocaleTimeString()}</span>
+              <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-gray-500 dark:text-gray-400 font-bold tracking-wide transition-colors duration-300 text-sm sm:text-base">
+                <span className="flex items-center"><Calendar className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-gray-400 dark:text-gray-500" /> {new Date(session.createdAt).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })} at {new Date(session.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
             </div>
             
-            <div className={`flex flex-col items-center justify-center p-8 rounded-3xl border-2 min-w-[14rem] shadow-sm transform hover:scale-105 transition-all duration-300 relative ${isEvaluating ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-900/30' : session.aiMarks >= 80 ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-900/30' : session.aiMarks >= 50 ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-900/30' : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-900/30'}`}>
+            <div className={`flex flex-col items-center justify-center p-6 sm:p-8 rounded-3xl border-2 w-full sm:min-w-[14rem] sm:w-auto shadow-sm transform hover:scale-105 transition-all duration-300 relative ${isEvaluating ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-900/30' : session.aiMarks >= 80 ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-900/30' : session.aiMarks >= 50 ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-900/30' : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-900/30'}`}>
                 {!isEvaluating && session.aiMarks >= 85 && (
                   <div className="absolute -top-3 -right-3">
                     <div className="bg-indigo-600 text-white p-2 rounded-full shadow-lg animate-bounce">
@@ -120,7 +120,7 @@ export default function Results() {
                     </div>
                   </div>
                 )}
-                <span className="text-sm font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400 mb-2 transition-colors duration-300 font-sans">{isEvaluating ? 'Evaluating' : 'Total Score'}</span>
+                <span className="text-xs sm:text-sm font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400 mb-2 transition-colors duration-300 font-sans">{isEvaluating ? 'Evaluating' : 'Total Score'}</span>
                 <div className="flex items-baseline">
                   {isEvaluating ? (
                     <div className="flex flex-col items-center">
@@ -129,8 +129,8 @@ export default function Results() {
                     </div>
                   ) : (
                     <>
-                      <span className={`text-7xl font-black tracking-tighter transition-colors duration-300 font-sans ${isEvaluating ? 'text-indigo-600 dark:text-indigo-400' : session.aiMarks >= 80 ? 'text-green-600 dark:text-green-400' : session.aiMarks >= 50 ? 'text-amber-500 dark:text-amber-400' : 'text-red-500 dark:text-red-400'}`}>{session.aiMarks}</span>
-                      <span className="text-3xl font-bold text-gray-400 dark:text-gray-500 ml-1">/100</span>
+                      <span className={`text-5xl sm:text-7xl font-black tracking-tighter transition-colors duration-300 font-sans ${isEvaluating ? 'text-indigo-600 dark:text-indigo-400' : session.aiMarks >= 80 ? 'text-green-600 dark:text-green-400' : session.aiMarks >= 50 ? 'text-amber-500 dark:text-amber-400' : 'text-red-500 dark:text-red-400'}`}>{session.aiMarks}</span>
+                      <span className="text-xl sm:text-3xl font-bold text-gray-400 dark:text-gray-500 ml-1">/100</span>
                     </>
                   )}
                 </div>
@@ -174,7 +174,7 @@ export default function Results() {
                 key="results"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="grid grid-cols-1 md:grid-cols-2 gap-12"
+                className="grid grid-cols-1 lg:grid-cols-2 gap-12"
               >
                 <div className="space-y-6">
                   <h3 className="text-2xl font-black text-gray-900 dark:text-white flex items-center transition-colors duration-300">

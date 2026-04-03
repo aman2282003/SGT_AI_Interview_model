@@ -25,7 +25,7 @@ export default function Home() {
                 <span>Powered by Groq Llama 3 AI</span>
               </span>
             </div>
-            <h1 className="text-5xl font-black tracking-tight text-gray-900 dark:text-white sm:text-7xl mb-8 leading-tight transition-colors duration-300">
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-gray-900 dark:text-white mb-8 leading-tight transition-colors duration-300 px-4">
               Master your tech interviews with <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">AI Precision</span>
             </h1>
             <p className="text-xl leading-relaxed text-gray-600 dark:text-gray-400 mb-10 max-w-3xl mx-auto font-medium transition-colors duration-300">

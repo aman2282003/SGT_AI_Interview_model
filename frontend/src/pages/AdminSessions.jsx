@@ -45,18 +45,18 @@ export default function AdminSessions() {
     >
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight flex items-center gap-3 transition-colors duration-300">
-            <Users className="w-10 h-10 text-indigo-600 dark:text-indigo-400" />
-            Admin: All Platform Sessions
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight flex items-center gap-3 transition-colors duration-300">
+            <Users className="w-8 h-8 sm:w-10 sm:h-10 text-indigo-600 dark:text-indigo-400" />
+            Admin Panel
           </h1>
-          <p className="mt-3 text-lg text-gray-600 dark:text-gray-400 font-medium transition-colors duration-300">Monitor candidate interviews, review recordings, and analyze AI evaluations across the platform.</p>
+          <p className="mt-3 text-base sm:text-lg text-gray-600 dark:text-gray-400 font-medium transition-colors duration-300">Monitor candidate interviews and analyze evaluations.</p>
         </div>
         <div className="relative max-w-sm w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
           <input 
             type="text" 
-            placeholder="Search candidate or tech stack..." 
-            className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm"
+            placeholder="Search candidate..." 
+            className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm text-sm sm:text-base"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -91,9 +91,9 @@ export default function AdminSessions() {
                       </div>
                     </div>
                     <div>
-                      <div className="flex items-center gap-3">
-                         <h3 className="text-xl font-extrabold text-gray-900 dark:text-white transition-colors duration-300">{session.user?.name || 'Unknown User'}</h3>
-                         <span className="px-2.5 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs font-black uppercase rounded-full border border-gray-200 dark:border-gray-700 transition-colors duration-300">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                         <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-white transition-colors duration-300">{session.user?.name || 'Unknown User'}</h3>
+                         <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-[10px] sm:text-xs font-black uppercase rounded-full border border-gray-200 dark:border-gray-700 transition-colors duration-300">
                            {session.techStack}
                          </span>
                       </div>

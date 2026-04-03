@@ -33,7 +33,7 @@ export default function Login() {
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-500/10 dark:bg-indigo-400/20 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-500/10 dark:bg-purple-400/20 rounded-full blur-[120px] pointer-events-none"></div>
       
-      <div className="max-w-md w-full space-y-8 bg-white dark:bg-gray-900 bg-opacity-70 dark:bg-opacity-40 backdrop-blur-2xl p-10 rounded-[2.5rem] shadow-2xl dark:shadow-indigo-500/20 border border-white/50 dark:border-white/10 relative z-10 transition-colors duration-300">
+      <div className="max-w-md w-full space-y-8 bg-white dark:bg-gray-900 bg-opacity-70 dark:bg-opacity-40 backdrop-blur-2xl p-6 sm:p-10 rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl dark:shadow-indigo-500/20 border border-white/50 dark:border-white/10 relative z-10 transition-colors duration-300">
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
         <div className="text-center">
           <div className="mx-auto h-16 w-16 bg-indigo-50 dark:bg-indigo-900/50 items-center justify-center flex rounded-2xl shadow-inner mb-6 transform rotate-3 transition-colors duration-300">

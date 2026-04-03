@@ -492,13 +492,13 @@ export default function InterviewRoom() {
   // Strict requirement: must have camera AND screen sharing active
 
   return (
-    <div className="max-w-[100rem] mx-auto px-4 sm:px-6 lg:px-8 py-8 h-[calc(100vh-4rem)] flex flex-col transition-colors duration-300">
+    <div className="max-w-[100rem] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 min-h-[calc(100vh-4rem)] lg:h-[calc(100vh-4rem)] flex flex-col transition-colors duration-300">
       <div className="flex justify-between items-center mb-6">
         <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight capitalize transition-colors duration-300">{tech} Technical Interview</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight capitalize transition-colors duration-300">{tech} Interview</h2>
             {isHardwareReady && (
-              <span className="bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 px-4 py-1.5 rounded-full text-sm font-bold shadow-sm transition-colors duration-300">
+              <span className="bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 px-3 py-1 rounded-full text-xs sm:text-sm font-bold shadow-sm transition-colors duration-300 inline-block w-fit">
                 Question {currentIndex + 1} of {questions.length}
               </span>
             )}
@@ -663,9 +663,9 @@ export default function InterviewRoom() {
           </div>
         </div>
 
-        {/* RIGHT COMPONENT */}
-        <div className="lg:col-span-2 flex flex-col space-y-6">
-          <div className="h-[300px] bg-gray-900 rounded-3xl overflow-hidden relative shadow-lg ring-1 ring-gray-900/10 border border-gray-800 flex items-center justify-center transition-colors duration-300">
+        {/* RIGHT COMPONENT (Media Feeds) */}
+        <div className="lg:col-span-2 flex flex-col space-y-6 order-first lg:order-last">
+          <div className="h-[200px] sm:h-[300px] bg-gray-900 rounded-3xl overflow-hidden relative shadow-lg ring-1 ring-gray-900/10 border border-gray-800 flex items-center justify-center transition-colors duration-300">
             {isCameraRequested ? (
               <Webcam 
                 audio={true} 
@@ -694,7 +694,7 @@ export default function InterviewRoom() {
             </div>
           </div>
 
-          <div className="flex-1 bg-gray-900 rounded-3xl overflow-hidden relative shadow-lg ring-1 ring-gray-900/10 flex items-center justify-center border border-gray-800 min-h-[300px] transition-colors duration-300">
+          <div className="h-[180px] sm:h-[300px] lg:flex-1 bg-gray-900 rounded-3xl overflow-hidden relative shadow-lg ring-1 ring-gray-900/10 flex items-center justify-center border border-gray-800 transition-colors duration-300">
             <video 
               ref={screenRef} 
               autoPlay 

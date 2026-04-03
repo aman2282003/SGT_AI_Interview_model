@@ -83,10 +83,10 @@ export default function Dashboard() {
       className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12 transition-colors duration-300"
     >
       <section>
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-10 gap-6">
           <div>
-            <h2 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight transition-colors duration-300">Select your Tech Stack</h2>
-            <p className="mt-3 text-lg text-gray-600 dark:text-gray-400 max-w-2xl font-medium transition-colors duration-300">Choose a specific technology to practice your virtual interview with our AI.</p>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight transition-colors duration-300">Select your Tech Stack</h2>
+            <p className="mt-3 text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-2xl font-medium transition-colors duration-300">Choose a specific technology to practice your virtual interview with our AI.</p>
           </div>
           {history.length === 0 && (
             <div className="mt-4 md:mt-0 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-100 dark:border-indigo-800/50 flex items-center gap-3">
@@ -161,9 +161,9 @@ export default function Dashboard() {
              <div className="absolute bottom-0 left-0 w-64 h-64 bg-black/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2"></div>
              
              <div className="relative z-10 flex-1 space-y-6 text-center lg:text-left">
-               <span className="px-4 py-1.5 bg-white/20 backdrop-blur-md rounded-full text-xs font-black uppercase tracking-widest border border-white/30">Your Journey Begins</span>
-               <h2 className="text-5xl md:text-6xl font-black leading-tight tracking-tighter">Prepare for your <br/> Dream Job.</h2>
-               <p className="text-xl text-indigo-100 font-medium max-w-xl mx-auto lg:mx-0">Take your first mock interview and get instant AI feedback to improve your technical and soft skills.</p>
+               <span className="px-4 py-1.5 bg-white/20 backdrop-blur-md rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest border border-white/30 inline-block">Your Journey Begins</span>
+               <h2 className="text-4xl sm:text-5xl md:text-6xl font-black leading-tight tracking-tighter">Prepare for your <br className="hidden sm:block"/> Dream Job.</h2>
+               <p className="text-lg sm:text-xl text-indigo-100 font-medium max-w-xl mx-auto lg:mx-0">Take your first mock interview and get instant AI feedback to improve your technical and soft skills.</p>
                <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start pt-4">
                  <div className="flex items-center -space-x-4">
                     {[1,2,3,4].map(i => (

@@ -38,11 +38,11 @@ export default function MyInterviews() {
       className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8 transition-colors duration-300"
     >
       <div>
-        <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight flex items-center gap-3 transition-colors duration-300">
-          <History className="w-10 h-10 text-indigo-600 dark:text-indigo-400" />
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight flex items-center gap-3 transition-colors duration-300">
+          <History className="w-8 h-8 sm:w-10 sm:h-10 text-indigo-600 dark:text-indigo-400" />
           My Interviews Archive
         </h1>
-        <p className="mt-3 text-lg text-gray-600 dark:text-gray-400 font-medium transition-colors duration-300">Review your past performance, analyze AI feedback, and watch your recorded sessions.</p>
+        <p className="mt-3 text-base sm:text-lg text-gray-600 dark:text-gray-400 font-medium transition-colors duration-300">Review your past performance, analyze AI feedback, and watch your recorded sessions.</p>
       </div>
 
       {sessions.length === 0 ? (
@@ -67,12 +67,12 @@ export default function MyInterviews() {
                 >
                   <div className={`absolute top-0 left-0 w-2 h-full ${session.aiMarks >= 80 ? 'bg-green-400' : session.aiMarks >= 50 ? 'bg-amber-400' : 'bg-red-400'}`}></div>
                   
-                  <div className="flex items-center gap-5 pl-4">
-                    <div className="w-14 h-14 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center border border-indigo-100 dark:border-indigo-900/30 shadow-inner transition-colors duration-300">
-                      <Code2 className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
+                  <div className="flex items-center gap-3 sm:gap-5 pl-4">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center border border-indigo-100 dark:border-indigo-900/30 shadow-inner transition-colors duration-300">
+                      <Code2 className="w-6 h-6 sm:w-7 sm:h-7 text-indigo-600 dark:text-indigo-400" />
                     </div>
                     <div>
-                      <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white transition-colors duration-300">{session.techStack}</h3>
+                      <h3 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white transition-colors duration-300">{session.techStack}</h3>
                       <div className="flex items-center mt-1 text-sm text-gray-500 dark:text-gray-400 font-bold tracking-wide transition-colors duration-300">
                         <Calendar className="w-4 h-4 mr-1.5 opacity-70" /> 
                         {new Date(session.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}

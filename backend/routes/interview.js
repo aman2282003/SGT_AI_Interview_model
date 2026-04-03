@@ -92,139 +92,107 @@ router.post('/submit', auth, localUpload.fields([{ name: 'cameraVideo', maxCount
     // 2. Respond to the client immediately (VERY FAST now because files are only moved to local disk)
     res.status(201).json(session);
 
-    // 3. Perform Cloudinary upload and AI evaluation in the background
+    // 3. Perform Cloudinary upload and AI evaluation in the background (PARALLELIZED)
     const groq = getGroqClient();
     
+    // Track A: AI Evaluation (Fast)
     (async () => {
       try {
-        let finalCameraUrl = null;
-        let finalScreenUrl = null;
-
-        // A. Upload to Cloudinary in background
-        if (req.files && req.files['cameraVideo']) {
-          const file = req.files['cameraVideo'][0];
-          console.log("Background: Uploading camera video to Cloudinary...");
-          const result = await cloudinary.uploader.upload(file.path, {
-            folder: 'ai-interviewer-recordings',
-            resource_type: 'video',
-            public_id: `${req.user.id}-${Date.now()}-camera`
-          });
-          finalCameraUrl = result.secure_url;
-          if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
-        }
-
-        if (req.files && req.files['screenVideo']) {
-          const file = req.files['screenVideo'][0];
-          console.log("Background: Uploading screen video to Cloudinary...");
-          const result = await cloudinary.uploader.upload(file.path, {
-            folder: 'ai-interviewer-recordings',
-            resource_type: 'video',
-            public_id: `${req.user.id}-${Date.now()}-screen`
-          });
-          finalScreenUrl = result.secure_url;
-          if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
-        }
-
-        // Update URLs in database
-        await InterviewSession.findByIdAndUpdate(session._id, {
-          cameraVideoUrl: finalCameraUrl,
-          screenVideoUrl: finalScreenUrl
-        });
-
-        // B. Perform AI evaluation
         if (!groq) {
-          console.error("AI configuration missing for background evaluation.");
-          await InterviewSession.findByIdAndUpdate(session._id, {
-            aiFeedback: "AI configuration is missing. Please check the server environment variables."
-          });
+          console.error("[AI] Configuration missing.");
+          await InterviewSession.findByIdAndUpdate(session._id, { aiFeedback: "AI configuration missing." });
           return; 
         }
 
-        console.log(`[AI] Starting evaluation for session: ${session._id}`);
+        console.log(`[AI] Starting fast-track evaluation for session: ${session._id}`);
         const prompt = `You are an expert technical interviewer. Evaluate the candidate for the ${techStack} role.
 Transcript:
 "${transcript}"
 
 Requirements:
-- Score from 0 to 100 based on technical depth and accuracy.
-- Provide constructive, detailed feedback.
-- If answers are missing or empty, score must be 0.
-- Response MUST be pure JSON format exactly like this:
-{"marks": 85, "feedback": "Detailed feedback text here..."}
-
-Note: Do not use markdown blocks or any other commentary. Ensure special characters in feedback are properly escaped for JSON.`;
+- Score 0-100. Constructive feedback.
+- MUST respond with raw JSON: {"marks": 85, "feedback": "..."}
+- No markdown. Escape special characters.`;
 
         const completion = await groq.chat.completions.create({
           model: 'llama-3.3-70b-versatile',
           messages: [{ role: 'user', content: prompt }],
-          temperature: 0.2, // Lower temperature for more consistent JSON
+          temperature: 0.2,
           max_tokens: 1500,
         });
 
         let responseText = completion.choices[0]?.message?.content?.trim() || '';
-        console.log(`[AI] Raw response received. Length: ${responseText.length}`);
-
-        // Robust JSON extraction
         let evaluation = { marks: 0, feedback: "Evaluation processing failed." };
-        try {
-          // Attempt 1: Standard cleaning
-          let cleanedResponse = responseText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
-          
-          // Attempt 2: Extract content between first { and last }
-          const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            cleanedResponse = jsonMatch[0];
-          }
 
+        try {
+          let cleanedResponse = responseText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+          const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
+          if (jsonMatch) cleanedResponse = jsonMatch[0];
           evaluation = JSON.parse(cleanedResponse);
-          console.log(`[AI] Successfully parsed evaluation for ${session._id}. Score: ${evaluation.marks}`);
-        } catch (parseError) {
-          console.warn(`[AI] JSON Parse failed for ${session._id}. Attempting manual extraction...`);
-          
-          // Fallback: Manual extraction of marks and feedback if JSON is malformed
+        } catch (e) {
+          // Fallback manual extraction
           const marksMatch = responseText.match(/"marks":\s*(\d+)/);
           const feedbackMatch = responseText.match(/"feedback":\s*"([\s\S]*?)"(?=\s*}|\s*,)/);
-          
-          if (marksMatch) {
-            evaluation.marks = parseInt(marksMatch[1]);
-          }
-          if (feedbackMatch) {
-            evaluation.feedback = feedbackMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
-          } else {
-            evaluation.feedback = "The AI evaluation was generated but could not be parsed correctly. Marks: " + (evaluation.marks || 0);
-          }
+          if (marksMatch) evaluation.marks = parseInt(marksMatch[1]);
+          if (feedbackMatch) evaluation.feedback = feedbackMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
         }
 
         await InterviewSession.findByIdAndUpdate(session._id, {
           aiMarks: evaluation.marks,
           aiFeedback: evaluation.feedback
         });
-        console.log(`[SUCCESS] Background tasks complete for session: ${session._id}`);
-      } catch (bgErr) {
-        console.error(`[CRITICAL] Background error for session ${session._id}:`);
-        console.error(bgErr); // Log the full error object to the console
+        console.log(`[AI] SUCCESS: Score updated for session ${session._id}`);
+      } catch (err) {
+        console.error(`[AI] ERROR for session ${session._id}:`, err.message);
+        await InterviewSession.findByIdAndUpdate(session._id, { aiFeedback: `AI Evaluation failed: ${err.message}` });
+      }
+    })();
 
-        // Ensure cleanup even on error, but wrapped in try/catch to avoid secondary failures
+    // Track B: Cloudinary Uploads (Slow)
+    (async () => {
+      try {
+        let finalCameraUrl = null;
+        let finalScreenUrl = null;
+
+        if (req.files && req.files['cameraVideo']) {
+          const file = req.files['cameraVideo'][0];
+          console.log(`[UPLOAD] Camera video starting for session ${session._id}...`);
+          const result = await cloudinary.uploader.upload(file.path, {
+            folder: 'ai-interviewer-recordings',
+            resource_type: 'video',
+          });
+          finalCameraUrl = result.secure_url;
+        }
+
+        if (req.files && req.files['screenVideo']) {
+          const file = req.files['screenVideo'][0];
+          console.log(`[UPLOAD] Screen video starting for session ${session._id}...`);
+          const result = await cloudinary.uploader.upload(file.path, {
+            folder: 'ai-interviewer-recordings',
+            resource_type: 'video',
+          });
+          finalScreenUrl = result.secure_url;
+        }
+
+        await InterviewSession.findByIdAndUpdate(session._id, {
+          cameraVideoUrl: finalCameraUrl,
+          screenVideoUrl: finalScreenUrl
+        });
+        console.log(`[UPLOAD] SUCCESS: Videos linked for session ${session._id}`);
+      } catch (err) {
+        console.error(`[UPLOAD] ERROR for session ${session._id}:`, err.message);
+      } finally {
+        // Cleanup ALL local files after upload track finishes (success or fail)
         try {
           if (req.files) {
             Object.values(req.files).forEach(fileArr => {
-              fileArr.forEach(f => { 
-                if (f.path && fs.existsSync(f.path)) {
-                  fs.unlinkSync(f.path); 
-                  console.log(`[CLEANUP] Deleted temp file: ${f.path}`);
-                }
-              });
+              fileArr.forEach(f => { if (f.path && fs.existsSync(f.path)) fs.unlinkSync(f.path); });
             });
+            console.log(`[CLEANUP] Temp files cleared for session ${session._id}`);
           }
-        } catch (cleanupErr) {
-          console.error(`[CLEANUP ERROR] Failed to delete temp files:`, cleanupErr.message);
+        } catch (e) {
+          console.error(`[CLEANUP] Error:`, e.message);
         }
-
-        const errorMessage = bgErr.message || (typeof bgErr === 'string' ? bgErr : "An unexpected background error occurred during AI evaluation.");
-        
-        await InterviewSession.findByIdAndUpdate(session._id, {
-          aiFeedback: `Processing/Evaluation failed: ${errorMessage}. Please contact support with Session ID: ${session._id}`
-        });
       }
     })();
 
