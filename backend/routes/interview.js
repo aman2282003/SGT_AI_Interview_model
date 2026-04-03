@@ -134,51 +134,96 @@ router.post('/submit', auth, localUpload.fields([{ name: 'cameraVideo', maxCount
         // B. Perform AI evaluation
         if (!groq) {
           console.error("AI configuration missing for background evaluation.");
+          await InterviewSession.findByIdAndUpdate(session._id, {
+            aiFeedback: "AI configuration is missing. Please check the server environment variables."
+          });
           return; 
         }
 
-        console.log(`Starting background AI evaluation for session: ${session._id}`);
-        const prompt = `You are a professional technical interviewer. The candidate took an interview for the following tech stack: ${techStack}.
-They were asked multiple questions. Here is the transcript of the interview questions and their recorded answers:
-
+        console.log(`[AI] Starting evaluation for session: ${session._id}`);
+        const prompt = `You are an expert technical interviewer. Evaluate the candidate for the ${techStack} role.
+Transcript:
 "${transcript}"
 
-Evaluate their combined answers. Be encouraging but fair with the scoring. 
-- If the candidate provided absolutely zero meaningful content, or if most answers are "No answer provided.", you MUST give 0 marks.
-- For basic or beginner attempts, you can be friendly and give some marks, but ensure the score reflects their actual knowledge.
-- Within your feedback, you MUST include a specific section called "Suggestions for Improvement" telling them exactly what they can do better next time.
-You MUST respond with ONLY valid JSON. No extra text, no markdown, no code blocks. Just the raw JSON object:
-{"marks": <integer 0-100>, "feedback": "<detailed friendly feedback, including Suggestions for Improvement at the end>"}`;
+Requirements:
+- Score from 0 to 100 based on technical depth and accuracy.
+- Provide constructive, detailed feedback.
+- If answers are missing or empty, score must be 0.
+- Response MUST be pure JSON format exactly like this:
+{"marks": 85, "feedback": "Detailed feedback text here..."}
+
+Note: Do not use markdown blocks or any other commentary. Ensure special characters in feedback are properly escaped for JSON.`;
 
         const completion = await groq.chat.completions.create({
           model: 'llama-3.3-70b-versatile',
           messages: [{ role: 'user', content: prompt }],
-          temperature: 0.4,
-          max_tokens: 1024,
+          temperature: 0.2, // Lower temperature for more consistent JSON
+          max_tokens: 1500,
         });
 
         let responseText = completion.choices[0]?.message?.content?.trim() || '';
-        responseText = responseText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
-        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-        if (jsonMatch) responseText = jsonMatch[0];
+        console.log(`[AI] Raw response received. Length: ${responseText.length}`);
 
-        const evaluation = JSON.parse(responseText);
+        // Robust JSON extraction
+        let evaluation = { marks: 0, feedback: "Evaluation processing failed." };
+        try {
+          // Attempt 1: Standard cleaning
+          let cleanedResponse = responseText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+          
+          // Attempt 2: Extract content between first { and last }
+          const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            cleanedResponse = jsonMatch[0];
+          }
+
+          evaluation = JSON.parse(cleanedResponse);
+          console.log(`[AI] Successfully parsed evaluation for ${session._id}. Score: ${evaluation.marks}`);
+        } catch (parseError) {
+          console.warn(`[AI] JSON Parse failed for ${session._id}. Attempting manual extraction...`);
+          
+          // Fallback: Manual extraction of marks and feedback if JSON is malformed
+          const marksMatch = responseText.match(/"marks":\s*(\d+)/);
+          const feedbackMatch = responseText.match(/"feedback":\s*"([\s\S]*?)"(?=\s*}|\s*,)/);
+          
+          if (marksMatch) {
+            evaluation.marks = parseInt(marksMatch[1]);
+          }
+          if (feedbackMatch) {
+            evaluation.feedback = feedbackMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
+          } else {
+            evaluation.feedback = "The AI evaluation was generated but could not be parsed correctly. Marks: " + (evaluation.marks || 0);
+          }
+        }
 
         await InterviewSession.findByIdAndUpdate(session._id, {
           aiMarks: evaluation.marks,
           aiFeedback: evaluation.feedback
         });
-        console.log(`Background tasks complete for session: ${session._id}`);
+        console.log(`[SUCCESS] Background tasks complete for session: ${session._id}`);
       } catch (bgErr) {
-        console.error(`Background error for session ${session._id}:`, bgErr.message);
-        // Ensure cleanup even on error
-        if (req.files) {
-          Object.values(req.files).forEach(fileArr => {
-            fileArr.forEach(f => { if (fs.existsSync(f.path)) fs.unlinkSync(f.path); });
-          });
+        console.error(`[CRITICAL] Background error for session ${session._id}:`);
+        console.error(bgErr); // Log the full error object to the console
+
+        // Ensure cleanup even on error, but wrapped in try/catch to avoid secondary failures
+        try {
+          if (req.files) {
+            Object.values(req.files).forEach(fileArr => {
+              fileArr.forEach(f => { 
+                if (f.path && fs.existsSync(f.path)) {
+                  fs.unlinkSync(f.path); 
+                  console.log(`[CLEANUP] Deleted temp file: ${f.path}`);
+                }
+              });
+            });
+          }
+        } catch (cleanupErr) {
+          console.error(`[CLEANUP ERROR] Failed to delete temp files:`, cleanupErr.message);
         }
+
+        const errorMessage = bgErr.message || (typeof bgErr === 'string' ? bgErr : "An unexpected background error occurred during AI evaluation.");
+        
         await InterviewSession.findByIdAndUpdate(session._id, {
-          aiFeedback: "Processing/Evaluation failed: " + (bgErr.message || "Unknown error")
+          aiFeedback: `Processing/Evaluation failed: ${errorMessage}. Please contact support with Session ID: ${session._id}`
         });
       }
     })();

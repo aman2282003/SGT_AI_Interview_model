@@ -24,8 +24,14 @@ mongoose.connect(process.env.MONGODB_URI)
 
 // Global request logger for debugging
 app.use((req, res, next) => {
-  console.log(`[${req.method}] ${req.path}`, req.body);
-  next(); // Without this, all API routes will hang indefinitely!
+  const timestamp = new Date().toLocaleTimeString();
+  if (req.method === 'GET') {
+    console.log(`[${timestamp}] [${req.method}] ${req.path}`);
+  } else {
+    // Only log body for non-GET requests to avoid 'undefined' noise
+    console.log(`[${timestamp}] [${req.method}] ${req.path}`, req.body);
+  }
+  next();
 });
 
 app.use('/api/auth', require('./routes/auth'));
