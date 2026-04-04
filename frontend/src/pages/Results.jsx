@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Award, AlertCircle, ChevronLeft, Calendar, Code2, MessageSquare, Video, MonitorUp, Sparkles, CheckCircle2 } from 'lucide-react';
@@ -12,49 +12,93 @@ export default function Results() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  const pollIntervalRef = useRef(null);
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
-    let interval;
+    isMountedRef.current = true;
+    console.log(`[Results] Component mounted for session ID: ${id}`);
     
-    const fetchSession = async () => {
+    const fetchSession = async (isManual = false) => {
       try {
         const token = localStorage.getItem('token');
+        if (!token) {
+          console.warn("[Results] No token found, possible redirect coming from ProtectedRoute");
+          return;
+        }
+
         const res = await axios.get(`${API_BASE}/api/interview/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
+        
+        if (!isMountedRef.current) {
+          console.log("[Results] Data received but component unmounted. Ignoring.");
+          return;
+        }
+
+        // VERIFY IDENTITY: Ensure the returned ID matches the requested one
+        if (res.data._id && res.data._id !== id) {
+          console.error("[Results] ID mismatch! Data returned for different session.");
+          setError('Security mismatch detected. Redirecting...');
+          setTimeout(() => navigate('/dashboard'), 2000);
+          return;
+        }
+
+        console.log("[Results] Data update:", { 
+          id: res.data._id, 
+          hasMarks: res.data.aiMarks !== null,
+          marks: res.data.aiMarks 
+        });
+
         setSession(res.data);
-        setLoading(false);
+        if (isManual) setLoading(false);
 
         // If AI assessment is done, clear the interval
-        if (res.data.aiMarks !== null && interval) {
-          clearInterval(interval);
-          interval = null;
+        if (res.data.aiMarks !== null && pollIntervalRef.current) {
+          console.log("[Results] Assessment READY. Killing poll interval.");
+          clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
         }
       } catch (err) {
-        console.error("Polling error:", err);
-        setError('Failed to load interview results');
+        if (!isMountedRef.current) return;
+        console.error("[Results] Fetch error:", err.response?.status, err.message);
+        
+        if (err.response?.status === 404) {
+          setError('Interview session not found');
+        } else if (err.response?.status === 401) {
+          setError('Session expired. Please log in again.');
+        } else {
+          setError('Failed to load interview results');
+        }
+        
         setLoading(false);
-        if (interval) clearInterval(interval);
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
+        }
       }
     };
 
     // Initial fetch
-    fetchSession();
+    fetchSession(true);
 
     // Only start polling if we don't have the result yet
-    interval = setInterval(() => {
-      // Check if we already have the session AND it still has no marks
-      // Using a closure/ref or just checking the latest state via functional update is tricky in setInterval
-      // but here we can just call fetchSession and it will handle the stop condition.
-      fetchSession();
-    }, 5000); // Poll every 5 seconds
+    pollIntervalRef.current = setInterval(() => {
+      if (isMountedRef.current) fetchSession(false);
+    }, 5000); 
 
     return () => {
-      if (interval) clearInterval(interval);
+      console.log(`[Results] Unmounting session ${id}`);
+      isMountedRef.current = false;
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
     };
   }, [id]);
 
-  if (loading) return <div className="min-h-[calc(100vh-4rem)] flex justify-center items-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>;
+  if (loading) return <div className="min-h-[calc(100vh-4rem)] flex justify-center items-center font-sans tracking-tight"><div className="flex flex-col items-center gap-6"><div className="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-600 shadow-xl"></div><p className="text-gray-500 font-bold animate-pulse uppercase tracking-widest text-xs">Accessing Secure Report...</p></div></div>;
 
   if (error) return (
     <div className="min-h-[calc(100vh-4rem)] flex justify-center items-center flex-col space-y-4">
@@ -211,7 +255,7 @@ export default function Results() {
                               <MonitorUp className="w-4 h-4 mr-2" /> Screen Capture
                             </div>
                             <video controls playsInline className="w-full h-auto max-h-[400px]">
-                              <source src={session.screenVideoUrl.startsWith('http') ? session.screenVideoUrl : `${API_BASE}${session.screenVideoUrl}`} type="video/webm" />
+                              <source src={session.screenVideoUrl && session.screenVideoUrl.startsWith('http') ? session.screenVideoUrl : `${API_BASE}${session.screenVideoUrl}`} type="video/webm" />
                               Your browser does not support the video tag.
                             </video>
                           </div>
@@ -222,7 +266,7 @@ export default function Results() {
                               <Video className="w-4 h-4 mr-2" /> Personal Camera
                             </div>
                             <video controls playsInline className="w-full h-auto max-h-[300px]">
-                              <source src={session.cameraVideoUrl.startsWith('http') ? session.cameraVideoUrl : `${API_BASE}${session.cameraVideoUrl}`} type="video/webm" />
+                              <source src={session.cameraVideoUrl && session.cameraVideoUrl.startsWith('http') ? session.cameraVideoUrl : `${API_BASE}${session.cameraVideoUrl}`} type="video/webm" />
                               Your browser does not support the video tag.
                             </video>
                           </div>

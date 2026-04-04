@@ -134,25 +134,45 @@ export default function InterviewRoom() {
 
   const startRecordingSystem = async () => {
     try {
-      // Reuse the audio track from camera stream if available to avoid multiple mic requests
+      // 1. First choice: reuse audio track from camera stream if available
+      let tracks = cameraStreamRef.current ? cameraStreamRef.current.getAudioTracks() : [];
       let stream;
-      if (cameraStreamRef.current && cameraStreamRef.current.getAudioTracks().length > 0) {
-        stream = new MediaStream(cameraStreamRef.current.getAudioTracks());
+
+      if (tracks.length > 0) {
+        console.log("Reusing audio from camera stream for transcription.");
+        stream = new MediaStream([tracks[0]]);
       } else {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // 2. Fallback: Request audio explicitly if not found in cameraStream
+        console.log("No audio tracks in camera stream, requesting mic explicitly.");
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (innerErr) {
+          throw new Error("Unable to access microphone. Please ensure permissions are granted and no other app is using it. Details: " + innerErr.message);
+        }
       }
       
       audioStreamRef.current = stream;
-      setDiagnosticStatus('Recording (Live AI Transcription)...');
+      setDiagnosticStatus('Mic: Live Transcription Active');
       
       const processChunk = () => {
-        if (!recordingStateRef.current) return;
+        if (!recordingStateRef.current || !stream || stream.getAudioTracks().length === 0) {
+          console.log("Transcription chunking halted: state inactive or stream lost.");
+          return;
+        }
         
         let recorder;
         try {
+          // Verify track is active
+          if (stream.getAudioTracks()[0].readyState !== 'live') {
+            console.warn("Audio track is not live, skipping this chunk.");
+            setTimeout(processChunk, 2000);
+            return;
+          }
+
           recorder = new MediaRecorder(stream);
         } catch (e) {
-          setDiagnosticStatus('Browser MediaRecorder failed: ' + e.message);
+          console.error("MediaRecorder creation failed:", e);
+          setDiagnosticStatus('Mic Error: ' + e.message);
           setIsRecording(false);
           recordingStateRef.current = false;
           return;
@@ -161,59 +181,65 @@ export default function InterviewRoom() {
         activeRecorderRef.current = recorder;
         const chunks = [];
         
-        recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+        recorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
         
         recorder.onstop = async () => {
            if (chunks.length > 0) {
               const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
               const formData = new FormData();
-              // Determine file extension
               const ext = (recorder.mimeType || '').includes('mp4') ? 'm4a' : 'webm';
               formData.append('audio', blob, 'chunk.' + ext);
+              
               try {
                 const res = await axios.post(`${API_BASE}/api/interview/transcribe`, formData, {
                    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
                 });
                 if (res.data && res.data.text) {
                    const txt = res.data.text.trim();
+                   // Filter out common Whisper hallucinations or filler words if necessary
                    const isHallucination = /^(Thank you|Thanks for watching|Thanks|Subscribe)\.?$/i.test(txt);
                    if (txt.length > 1 && !isHallucination) {
                       setCurrentAnswer(prev => prev + (prev.trim() ? " " : "") + txt);
                    }
                 }
-              } catch(e) {
-                 console.log("Chunk transcription dropped", e);
-                 setDiagnosticStatus('Cloud AI Offline: ' + e.message);
+              } catch(transcribeErr) {
+                 console.log("Chunk transcription dropped", transcribeErr);
+                 // We don't stop the whole recording system for one failed chunk
               }
            }
-           // Loop next chunk 
+           
+           // Loop next chunk if still recording
            if (recordingStateRef.current) {
               processChunk();
            }
         };
         
         recorder.start();
+        // Give it 4 seconds of audio per chunk
         setTimeout(() => {
            if (recorder.state === 'recording' && recordingStateRef.current) {
-               recorder.stop();
+               try { recorder.stop(); } catch(e) {}
            }
-        }, 3500); // 3.5 seconds per chunk
+        }, 4000);
       };
       
       processChunk();
 
     } catch (err) {
       console.error("Recording system failed:", err);
-      // Give them the specific javascript exception
-      alert("Microphone Error: " + err.message + "\nIf you get permission denied, click the lock icon next to the URL.");
+      alert("Microphone Error: " + err.message + "\n\nPlease click the lock icon in your browser address bar to reset permissions.");
       setIsRecording(false);
       recordingStateRef.current = false;
-      setDiagnosticStatus('Hardware Error: ' + err.message);
+      setDiagnosticStatus('Mic Hardware Error');
     }
   };
 
   useEffect(() => {
     return () => {
+      // FORCE STOP everything on unmount to prevent background processing loops
+      setIsRecording(false);
+      recordingStateRef.current = false;
+      
       if (activeRecorderRef.current && activeRecorderRef.current.state === 'recording') {
          try { activeRecorderRef.current.stop(); } catch(e) {}
       }
@@ -235,7 +261,23 @@ export default function InterviewRoom() {
 
   const startScreenShare = async () => {
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      // Suggest entire screen, but most browsers will still show the picker
+      const stream = await navigator.mediaDevices.getDisplayMedia({ 
+        video: { displaySurface: 'monitor' }, 
+        audio: false 
+      });
+      
+      const track = stream.getVideoTracks()[0];
+      const settings = track.getSettings();
+      
+      // If the user selected a window or tab, stop and alert
+      // displaySurface can be 'monitor', 'window', or 'browser' (tab)
+      if (settings.displaySurface && settings.displaySurface !== 'monitor') {
+        stream.getTracks().forEach(t => t.stop());
+        alert("SECURITY REQUIREMENT: You MUST share your ENTIRE SCREEN to proceed with the interview. Sharing only a window or tab is not permitted.");
+        return;
+      }
+      
       if (screenRef.current) screenRef.current.srcObject = stream;
       streamRef.current = stream;
       setIsScreenSharing(true);
@@ -246,6 +288,9 @@ export default function InterviewRoom() {
       };
     } catch (err) {
       console.error("Error sharing screen: ", err);
+      if (err.name !== 'NotAllowedError') { // User cancelled
+        alert("Screen sharing failed: " + err.message);
+      }
     }
   };
 
@@ -283,6 +328,13 @@ export default function InterviewRoom() {
           cRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) cameraChunksRef.current.push(e.data); };
           cRecorder.start(1000);
           cameraRecorderRef.current = cRecorder;
+        }
+
+        // AUTOMATICALLY START TRANSCRIPTION RECORDING
+        if (!isRecording) {
+          setIsRecording(true);
+          recordingStateRef.current = true;
+          startRecordingSystem();
         }
       } catch (err) {
         console.warn("VP media recorder failed, falling back to default.", err);
@@ -492,7 +544,7 @@ export default function InterviewRoom() {
   // Strict requirement: must have camera AND screen sharing active
 
   return (
-    <div className="max-w-[100rem] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 min-h-[calc(100vh-4rem)] lg:h-[calc(100vh-4rem)] flex flex-col transition-colors duration-300">
+    <div className="max-w-[100rem] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 pb-16 min-h-[calc(100vh-4rem)] lg:h-[calc(100vh-4rem)] flex flex-col transition-colors duration-300">
       <div className="flex justify-between items-center mb-6">
         <div className="flex-1">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -517,7 +569,7 @@ export default function InterviewRoom() {
         </div>
       </div>
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-8 mb-4">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-8 mb-12">
         {/* LEFT COMPONENT */}
         <div className="lg:col-span-3 flex flex-col space-y-6">
           <div className="bg-white dark:bg-gray-900 rounded-[2rem] shadow-sm border border-indigo-100 dark:border-gray-800 p-8 flex flex-col flex-1 relative overflow-hidden transition-colors duration-300">
@@ -618,19 +670,12 @@ export default function InterviewRoom() {
                     </>
                   )}
                   
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
-                    <button 
-                        onClick={toggleRecording}
-                        className={`py-4 px-6 rounded-2xl font-bold flex items-center justify-center transition-all duration-300 border ${isRecording ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 border-red-200 dark:border-red-800/50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)]' : 'bg-indigo-600 dark:bg-indigo-500 text-white hover:bg-indigo-700 dark:hover:bg-indigo-400 border-indigo-700/20 dark:border-indigo-400/30 shadow-xl shadow-indigo-200 dark:shadow-indigo-900/20 transform hover:-translate-y-1'}`}
-                      >
-                      {isRecording ? <><StopCircle className="w-6 h-6 mr-2 animate-pulse" /> Stop Recording</> : <><PlayCircle className="w-6 h-6 mr-2" /> Start Recording</>}
-                    </button>
-                    
-                    <div className="flex gap-4">
+                  <div className="flex justify-end gap-4 mt-8">
+                    <div className="flex gap-4 w-full sm:w-auto">
                       {currentIndex > 0 && (
                         <button 
                           onClick={handlePreviousQuestion}
-                          className="flex-1 py-4 px-6 rounded-2xl font-bold text-gray-700 dark:text-white bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600 flex items-center justify-center transition-all shadow-sm"
+                          className="flex-1 sm:w-32 py-4 px-6 rounded-2xl font-bold text-gray-700 dark:text-white bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600 flex items-center justify-center transition-all shadow-sm"
                         >
                           <ChevronLeft className="w-5 h-5 mr-1" /> Prev
                         </button>
@@ -639,7 +684,7 @@ export default function InterviewRoom() {
                       {currentIndex < questions.length - 1 ? (
                         <button 
                           onClick={handleNextQuestion}
-                          className="flex-1 py-4 px-6 rounded-2xl font-bold text-gray-700 dark:text-white bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600 flex items-center justify-center transition-all shadow-sm"
+                          className="flex-1 sm:w-32 py-4 px-6 rounded-2xl font-bold text-gray-700 dark:text-white bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600 flex items-center justify-center transition-all shadow-sm"
                         >
                           Next <ChevronRight className="w-5 h-5 ml-1" />
                         </button>
@@ -647,12 +692,12 @@ export default function InterviewRoom() {
                         <button 
                           onClick={submitInterview}
                           disabled={isSubmitting}
-                          className="flex-1 py-4 px-6 rounded-2xl font-bold text-white bg-green-600 dark:bg-green-500 hover:bg-green-700 dark:hover:bg-green-400 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-green-200 dark:shadow-green-900/20 flex items-center justify-center transition-all transform hover:-translate-y-1 border border-green-700/20 dark:border-green-400/30"
+                          className="flex-1 sm:w-48 py-4 px-6 rounded-2xl font-bold text-white bg-green-600 dark:bg-green-500 hover:bg-green-700 dark:hover:bg-green-400 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-green-200 dark:shadow-green-900/20 flex items-center justify-center transition-all transform hover:-translate-y-1 border border-green-700/20 dark:border-green-400/30"
                         >
                           {isSubmitting ? (
                             <><Loader2 className="w-6 h-6 mr-2 animate-spin" /> {uploadProgress < 100 ? `Uploading: ${uploadProgress}%` : 'Finalizing...'}</>
                           ) : (
-                            'Submit'
+                            'Submit Interview'
                           )}
                         </button>
                       )}

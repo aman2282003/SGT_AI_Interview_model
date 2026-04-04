@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { motion, AnimatePresence } from 'framer-motion';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
-import { useContext } from 'react';
+import { useContext, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -30,6 +30,11 @@ const ProtectedAdminRoute = ({ children }) => {
 
 function AppContent() {
   const location = useLocation();
+
+  useEffect(() => {
+    console.log(`[Navigation] URL changed to: ${location.pathname}${location.search}`);
+  }, [location]);
+
   return (
     <div className="min-h-screen flex flex-col font-sans transition-colors duration-300 bg-white dark:bg-gray-950 dark:text-gray-100">
       <Navbar />
