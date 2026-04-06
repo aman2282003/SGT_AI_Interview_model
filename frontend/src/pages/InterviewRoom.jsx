@@ -659,7 +659,7 @@ export default function InterviewRoom() {
                       <div className="flex-1 bg-gray-50 dark:bg-gray-950 rounded-2xl p-6 shadow-inner relative flex flex-col min-h-[250px] transition-colors duration-300">
                         <textarea
                           className="w-full h-full bg-transparent resize-none outline-none text-gray-700 dark:text-gray-300 leading-relaxed font-medium transition-colors duration-300"
-                          placeholder='Press "Start Recording" to speak, or click here to manually type your answer if voice recording fails...'
+                          placeholder='Speak naturally and your response will be transcribed here. You can also manually edit or type your answer below...'
                           value={currentAnswer}
                           onChange={(e) => setCurrentAnswer(e.target.value)}
                         />

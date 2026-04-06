@@ -314,7 +314,7 @@ DO NOT include any markdown code blocks, prefixes, or suffixes. Just the raw JSO
 
     try {
       const completion = await groq.chat.completions.create({
-        model: 'llama-3.3-70b-versatile',
+        model: 'llama-3.1-8b-instant',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.6,
         max_tokens: 1024,
