@@ -1,145 +1,135 @@
 <div align="center">
-  <img src="https://img.shields.io/badge/AI-Interviewer-blue?style=for-the-badge&logo=openai" alt="AI Interviewer Logo">
+  <img src="https://img.shields.io/badge/AI--Powered-Interviewer-blue?style=for-the-badge&logo=openai" alt="AI Interviewer Logo">
+  <img src="https://img.shields.io/badge/MERN-Stack-green?style=for-the-badge&logo=mongodb" alt="MERN Stack">
+  <img src="https://img.shields.io/badge/Vite-React%2019-646CFF?style=for-the-badge&logo=vite" alt="Vite React">
+  
   <h1>🚀 Advanced AI Interview Platform</h1>
-  <p>A comprehensive, professional-grade assessment tool built with the MERN stack.</p>
+  <p><b>The future of technical hiring.</b> A professional-grade, AI-integrated assessment tool designed for scale, consistency, and depth.</p>
 </div>
 
----
+<br />
 
-## 📖 Table of Contents
-- [🎯 Purpose](#-purpose)
-- [✨ Key Features](#-key-features)
-- [💻 Tech Stack](#-tech-stack)
-- [🛠️ Getting Started](#-getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Environment Variables](#environment-variables)
-  - [Running the App](#running-the-app)
-- [📸 Screenshots](#-screenshots)
+> [!IMPORTANT]
+> **Revolutionizing Technical Hiring:** This platform automates the initial screening process by providing a live, AI-driven technical interview environment. It combines real-time coding, conversational AI, and synchronized media recording.
 
 ---
 
-## 🎯 Purpose
-The **Advanced AI Interview Platform** is designed to revolutionize the technical hiring process. It provides a seamless, robust environment for taking professional-grade coding assessments. By combining a live interactive coding environment, secure AI-driven test case evaluations, and comprehensive video/screen recording, this platform ensures a fair, thorough, and analytical interview experience.
+## 🎯 Purpose & Impact
 
-It enables recruiters and candidates to engage in a simulated interview environment with an AI interviewer assessing technical skills, followed by deep post-interview analytics.
+Manual technical interviews are time-consuming and often biased. This platform provides a robust, standardized environment where:
+- **Recruiters** can screen hundreds of candidates simultaneously without engineering overhead.
+- **Candidates** can showcase their skills in a professional, VS Code-like environment.
+- **Analytics** provide data-driven insights into candidate logic, syntax, and communication.
 
 ---
 
 ## ✨ Key Features
-- **🤖 AI-Driven Interviews:** Intelligent, conversational AI that acts as a technical interviewer using the Gemini API.
-- **💻 Interactive Code Editor:** Integrated Monaco Editor for a VS Code-like coding experience supporting multiple languages.
-- **🎥 Video & Screen Recording:** Robust local video and screen-sharing recording functionality, allowing comprehensive review of the candidate's session.
-- **📊 Analytics Dashboard:** Post-interview data visualization and detailed feedback using Recharts.
-- **🛡️ Secure Authentication:** JWT-based user authentication and authorization.
+
+| Feature | Description |
+| :--- | :--- |
+| **🤖 AI Interviewer** | A conversational agent powered by **Google Gemini API** that conducts technical dialogues. |
+| **💻 Interactive Code Editor** | Integrated **Monaco Editor** supporting multiple languages with syntax highlighting. |
+| **🧠 Smart Execution** | A clever **Simulated Code Execution Engine** using **Groq (Llama 3)** to analyze and "run" code without server-side risk. |
+| **🎥 Multi-Stream Recording** | Robust capture of **webcam, audio, and screen sharing** for complete transparency. |
+| **📊 Visual Analytics** | Performance metrics and post-interview feedback visualized with **Recharts**. |
+| **🛡️ Secure Auth** | Industrial-standard **JWT** based authentication and hashed storage. |
 
 ---
 
 ## 💻 Tech Stack
 
-### 🎨 Frontend (Client)
-- **Framework:** [React 19](https://react.dev/) with [Vite](https://vitejs.dev/)
-- **Styling:** [Tailwind CSS 4](https://tailwindcss.com/)
-- **Code Editor:** [@monaco-editor/react](https://github.com/suren-atoyan/monaco-react)
-- **Routing:** [React Router v7](https://reactrouter.com/)
-- **Charts:** [Recharts](https://recharts.org/)
-- **Media/Camera:** [React Webcam](https://www.npmjs.com/package/react-webcam)
-- **Icons:** [Lucide React](https://lucide.dev/)
+### Frontend (Client)
+- **Framework:** React 19 + Vite
+- **Styling:** Tailwind CSS 4 (Next-gen utility-first CSS)
+- **Routing:** React Router v7
+- **Editor:** @monaco-editor/react
+- **Charts:** Recharts
+- **Media:** React Webcam + MediaStream API
 
-### 🛠️ Backend (Server)
-- **Runtime:** [Node.js](https://nodejs.org/)
-- **Framework:** [Express.js](https://expressjs.com/)
-- **Database:** [MongoDB](https://www.mongodb.com/) with [Mongoose](https://mongoosejs.com/)
-- **Authentication:** [JWT (JSON Web Tokens)](https://jwt.io/) & [BcryptJS](https://www.npmjs.com/package/bcryptjs)
-- **File Uploads:** [Multer](https://www.npmjs.com/package/multer) (for storing video recordings)
-- **AI Integration:** [Google GenAI / Gemini](https://www.npmjs.com/package/@google/genai)
+### Backend (Server)
+- **Runtime:** Node.js + Express.js
+- **Database:** MongoDB + Mongoose ODM
+- **AI Integrations:** Google Generative AI (Gemini) & Groq (Llama 3.3)
+- **Storage:** Multer (Local) & Cloudinary (Cloud Media Storage)
+- **Auth:** JWT & BcryptJS
 
 ---
 
 ## 🛠️ Getting Started
 
-Follow these steps to set up the project locally on your machine.
-
 ### Prerequisites
-Make sure you have the following installed:
-- [Node.js](https://nodejs.org/) (v18 or higher recommended)
-- [MongoDB](https://www.mongodb.com/) (Local or Atlas URI)
-- Git
+- Node.js (v18.x or higher)
+- MongoDB (Atlas or Local)
+- API Keys for Google Gemini (GenAI) and Groq.
 
-### Installation
+### 1. Clone & Install
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/ai-interviewer.git
+cd ai-interviewer
 
-1. **Clone the repository** (if applicable) or navigate to the project directory:
-   ```bash
-   cd ai-interviewer
-   ```
+# Install Backend Dependencies
+cd backend
+npm install
 
-2. **Install Backend Dependencies:**
-   ```bash
-   cd backend
-   npm install
-   ```
+# Install Frontend Dependencies
+cd ../frontend
+npm install
+```
 
-3. **Install Frontend Dependencies:**
-   ```bash
-   cd frontend
-   npm install
-   ```
+### 2. Environment Setup
+Create a `.env` file in both directories:
 
-### Environment Variables
-
-You need to set up your environment variables for both the frontend and backend. 
-
-#### Backend (`backend/.env`)
-Create a `.env` file in the `backend` directory and add the following:
+**Backend (`/backend/.env`)**
 ```env
 PORT=5000
 MONGODB_URI=your_mongodb_connection_string
-JWT_SECRET=your_super_secret_jwt_key
-GEMINI_API_KEY=your_google_gemini_api_key
+JWT_SECRET=your_jwt_secret_key
+GEMINI_API_KEY=your_google_gemini_key
+GROQ_API_KEY=your_groq_api_key
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
 ```
 
-#### Frontend (`frontend/.env`)
-Create a `.env` file in the `frontend` directory for Vite environment variables:
+**Frontend (`/frontend/.env`)**
 ```env
 VITE_API_URL=http://localhost:5000
 ```
 
-### Running the App
+### 3. Run the Application
+You need two terminals running:
 
-You will need two separate terminal windows to run the frontend and backend simultaneously.
-
-**Terminal 1: Start the Backend Server**
+**Terminal 1 (Backend):**
 ```bash
 cd backend
 npm run dev
 ```
-*(Runs on [http://localhost:5000](http://localhost:5000))*
 
-**Terminal 2: Start the Frontend React App**
+**Terminal 2 (Frontend):**
 ```bash
 cd frontend
 npm run dev
 ```
-*(Runs on [http://localhost:5173](http://localhost:5173) or the port specified by Vite)*
 
 ---
 
-## 📸 Screenshots
-
-*(You can add your real project screenshots in this section by replacing the image links below)*
+## 📸 Project Gallery
 
 <div align="center">
-  <img src="https://via.placeholder.com/800x400.png?text=Interview+Dashboard+Screenshot" alt="Dashboard" width="800"/>
-  <br/>
-  <i>Dashboard Overview showing Analytics</i>
+  <img src="https://via.placeholder.com/800x400.png?text=Dashboard+Visuals" alt="Dashboard" width="800">
+  <br />
+  <i>The Analytics Dashboard: Insights at a glance</i>
 </div>
-<br/>
+
+<br />
+
 <div align="center">
-  <img src="https://via.placeholder.com/800x400.png?text=Interactive+Code+Editor+and+Video" alt="Coding Room" width="800"/>
-  <br/>
-  <i>Live Interview Room with Code Editor and Video Recording</i>
+  <img src="https://via.placeholder.com/800x400.png?text=AI+Interview+Room" alt="Interview Room" width="800">
+  <br />
+  <i>The Live Interview Room: Code, Video, and AI Chat</i>
 </div>
 
 ---
 
-<p align="center">Made with ❤️ for modern technical hiring.</p>
+<p align="center">Made with ❤️ by <b>Amani</b></p>
